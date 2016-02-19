@@ -1,0 +1,9 @@
+name = Metadata synchronization
+description = Metadata synchronization from a library system (Aleph/Alma) to Islandora, based on identifier
+dependencies[] = islandora_marcxml
+dependencies[] = islandora_batch
+package = UBL
+version = "7.x-1.x-dev"
+core = "7.x"
+
+files[] = ubl_metadata_synchronization.module

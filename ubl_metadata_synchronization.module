@@ -1,0 +1,46 @@
+<?php
+
+/**
+ * @file
+ * ubl_metadata_synchronization
+ *
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function ubl_metadata_synchronization_menu() {
+  $items = array();
+
+  $items['admin/islandora/tools/ubl_metadata_synchronization'] = array(
+    'title' => 'UBL metadata synchronization',
+    'description' => 'Settings for UBL metadata synchronization.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ubl_metadata_synchronization_settings_form'),
+    'access arguments' => array('ubl metadata synchronization'),
+    'file' => 'includes/form.inc',
+  );
+  $items['islandora/object/%islandora_object/manage/syncid'] = array(
+    'title' => 'Synchronize',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sync_id_editor_form', 2),
+    'access arguments' => array('ubl metadata synchronization'),
+    'file' => 'includes/form.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function ubl_metadata_synchronization_permission() {
+  return array(
+    'ubl metadata synchronization' => array(
+      'title' => 'Edit the synchronization settings, ID and synchronize metadata',
+    ),
+  );
+}
+
