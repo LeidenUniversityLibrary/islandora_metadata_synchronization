@@ -1,12 +1,16 @@
 <?php
 
+/**
+* functions for synchronizing metadat with an external source 
+**/
+
 function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $retrievalurl, $syncid, $idprefix = NULL) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
   $marcxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($retrievalurl,$syncid, $idprefix);
 
   if (!$marcxml) {
-    return t("No metadata found for object @objid with sync id @syncid", array("@objid" => $object->id, "@syncid" => $syncid));
+    return t("No metadata found for object @objid via @url with sync id @syncid", array("@objid" => $object->id, "@url" => $retrievalurl, "@syncid" => $syncid));
   }
   
   ubl_metadata_synchronization_save_xml($object,$marcxml,'MARC','MARC XML');
@@ -77,15 +81,51 @@ function ubl_metadata_synchronization_create_dc_from_mods($modsxml) {
   return $transformed_xml;
 }
 
-function ubl_metadata_synchronization_start_sync_from_date($date = NULL, $usingdrush = FALSE, $mapping = null) {
+function ubl_metadata_synchronization_sources($sourceid = null) {
+  $sources = array();
+
+  for ($i = 1; $i <= 99; $i++) {
+    if (($sourceid != null) && ($sourceid != $i)) {
+      continue;
+    }
+    $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$i.'_retrieval_url');
+    if (isset($retrieveurl) && strlen($retrieveurl) > 0) {
+      $set = variable_get('ubl_metadata_synchronization_source'.$i.'_set');
+      $idprefix = variable_get('ubl_metadata_synchronization_source'.$i.'_id_prefix');
+      $dsid = variable_get('ubl_metadata_synchronization_source'.$i.'_dsid');
+      $xpath = variable_get('ubl_metadata_synchronization_source'.$i.'_path');
+     
+      $sources[$i] = array(
+                      'url'      => $retrieveurl,
+                      'set'      => $set,
+                      'idprefix' => $idprefix,
+                      'dsid'     => $dsid,
+                      'xpath'    => $xpath,
+                     );
+    }
+  } 
+  return $sources;
+}
+
+function ubl_metadata_synchronization_start_sync($oaiparams, $usingdrush = FALSE, $mapping = null) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
   $oaiurls = array();
 
   for ($i = 1; $i <= 99; $i++) {
     $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$i.'_retrieval_url');
+    $set = variable_get('ubl_metadata_synchronization_source'.$i.'_set');
     if (isset($retrieveurl) && strlen($retrieveurl) > 0) {
-      $oaiurls[$retrieveurl] = $retrieveurl;
+      $key = $retrieveurl;
+      if (isset($set)) {
+        $key .= '_' . $set;
+      }
+      if ( ! isset($oaiurls[$key])) {
+        $newoaiparams = $oaiparams; 
+        $newoaiparams['set'] = $set;
+        ubl_metadata_synchronization_start_sync_with_url($retrieveurl, $newoaiparams, $usingdrush, $mapping);
+        $oaiurls[$key] = $i;
+      }
     }
     else {
       break;
@@ -100,52 +140,61 @@ function ubl_metadata_synchronization_start_sync_from_date($date = NULL, $usingd
     }
     return;
   }
-  if (count($oaiurls) > 1) {
-    if ($usingdrush) {
-      drush_log(t("Only use the first OAI-PMH url of the sources"), "warning");
-    }
-    else {
-      drupal_set_message(t("Only use the first OAI-PMH url of the sources"));
-    }
-  }
-  $oaiurl = array_shift($oaiurls);
- 
-  ubl_metadata_synchronization_start_sync_with_url_from_date($oaiurl, $date, $usingdrush, $mapping);
-}
-
-function ubl_metadata_synchronization_start_sync_with_url_from_date($oaiurl, $date = NULL, $usingdrush = FALSE, $mapping = null) {
-  $batch = array(
-    'file' => drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc',
-    'operations' => array(
-      array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$date,NULL,array(), $usingdrush, $mapping)),
-      array('ubl_metadata_synchronization_almost_ready', array()),
-    ),
-    'finished' => 'ubl_metadata_synchronization_finished',
-    'title' => t('Processing'),
-    'progress_message' => '',
-    'error_message' => t('Synchronization has encountered an error.'),
-  );
-
+  $t = t("Synchronized with the following sources: @sources", array("@sources" => implode(" and ", $oaiurls)));
   if ($usingdrush) {
-    $batch['progressive'] = FALSE;
-  }
-  batch_set($batch);
-  
-  if ($usingdrush) {
-    drush_backend_batch_process();
+    drush_log($t, "ok");
   }
   else {
+    drupal_set_message($t);
+  }
+}
+
+function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $oaiparams, $usingdrush = FALSE, $mapping = null) {
+  if ($usingdrush) {
+    drush_log(t("Starting sync with url '@url'!set.", array("@url" => $oaiurl, "!set" => ((isset($oaiparams["set"]) && strlen($oaiparams["set"]) > 0)?t(" and set '@set'", array("@set" => $oaiparams["set"])):''))));
+    $cntxt = array();
+    ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams,array(), $usingdrush, $mapping,$cntxt);
+  }
+  else {
+    $batch = array(
+      'file' => drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc',
+      'operations' => array(
+        array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$oaiparams,array(), $usingdrush, $mapping)),
+        array('ubl_metadata_synchronization_almost_ready', array()),
+      ),
+      'finished' => 'ubl_metadata_synchronization_finished',
+      'title' => t('Processing'),
+      'progress_message' => '',
+      'error_message' => t('Synchronization has encountered an error.'),
+    );
+  
+    batch_set($batch);
+  
     batch_process();
   }
 }
 
-function ubl_metadata_synchronization_handle_batch($oaiurl,$date = NULL, $resumptionToken = NULL, $results, $usingdrush, $mapping, &$context) {
+function ubl_metadata_synchronization_map_identifier($anId,$mapping) {
+  if ($mapping != null) {
+    if (isset($mapping['_pattern']) && isset($mapping['_replacement'])) {
+      $anId = preg_replace($mapping['_pattern'],$mapping['_replacement'],$anId);
+    }
+    else {
+      if (isset($mapping[$anId])) {
+        $anId = $mapping[$anId];
+      }
+    }
+  }
+  return $anId;
+}
+
+function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results, $usingdrush, $mapping, &$context) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
-  $oairesult = ubl_metadata_synchronization_identifiers_for_changed_metadata($oaiurl,$date,$resumptionToken);
+  $oairesult = ubl_metadata_synchronization_identifiers_for_changed_metadata($oaiurl,$oaiparams);
 
-  if (array_key_exists('oaierror',$oairesult)) {
-    if (($oairesult['oaierror'] === 'no record match the search criteria') && ! array_key_exists('oaiidscount',$results)) {
+  if (isset($oairesult['oaierror'])) {
+    if (($oairesult['oaierror'] === 'no record match the search criteria') && ! isset($oairesult['oaiidscount'])) {
       $text = t("No records available to synchronize; all up-to-date!");
       if ($usingdrush) {
         drush_log($text, 'ok');
@@ -167,56 +216,56 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$date = NULL, $resump
         $batch = &batch_get();
         $batch_next_set = $batch['current_set'] + 1;
         $batch_set = &$batch['sets'][$batch_next_set];
-        array_pop($batch_set['operations']);
+        if (isset($batch_set['operations'])) {
+          array_pop($batch_set['operations']);
+        }
         drupal_set_message($text, 'warning');
       }
     }
     return;
   }
 
-  if ( ! array_key_exists('oairesponsedate',$results)) {
+  if ( ! isset($results['oairesponsedate'])) {
     $results['oairesponsedate'] = $oairesult['responsedate'];
   }
-  if ( ! array_key_exists('oaiidscount',$results)) {
+  if ( ! isset($results['oaiidscount'])) {
     $results['oaiidscount'] = 0;
   }
-  if ( ! array_key_exists('syncsuccesses',$results)) {
+  if ( ! isset($results['syncsuccesses'])) {
     $results['syncsuccesses'] = 0;
   }
-  if ( ! array_key_exists('syncerrors',$results)) {
+  if ( ! isset($results['syncerrors'])) {
     $results['syncerrors'] = array();
   }
   $results['oaiidscount'] += count($oairesult['ids']);
   foreach ($oairesult['ids'] as $anId) {
-    if ($mapping != null) {
-      if (array_key_exists('_pattern', $mapping) && array_key_exists('_replacement', $mapping)) {
-        $anId = preg_replace($mapping['_pattern'],$mapping['_replacement'],$anId);
-      }
-      else {
-        if (array_key_exists($anId, $mapping)) {
-          $anId = $mapping[$anId];
-        }
-      }
-    }
+    $anId = ubl_metadata_synchronization_map_identifier($anId,$mapping);
     $object = find_fedora_object_for_id($anId);
     if ($object) {
       $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId);    
       if ($t) {
         $results['syncerrors'][] = $t;
-        drush_log(t("Fedora object found for @id but update failed: @error", array('@id' => $anId, '@error' => $t)),'warning');
+        if ($usingdrush) {
+          drush_log(t("Fedora object found for @id but update failed: @error", array('@id' => $anId, '@error' => $t)),'warning');
+        }
       }
       else {
         $results['syncsuccesses'] += 1;
-        drush_log(t("Fedora object found and is up-to-date for @id", array('@id' => $anId)),'notice');
+        if ($usingdrush) {
+          drush_log(t("Fedora object found and is up-to-date for @id", array('@id' => $anId)),'notice');
+        }
       }
     }
     else {
-      drush_log(t("No fedora object found for @id", array('@id' => $anId)),'notice');
+      if ($usingdrush) {
+        drush_log(t("No fedora object found for @id", array('@id' => $anId)),'notice');
+      }
     }
   }
-  if (array_key_exists("resumptiontoken",$oairesult)) {
+  if (isset($oairesult["resumptiontoken"])) {
+    $newoaiparams = array('resumptiontoken' => $oairesult["resumptiontoken"]);
     if ($usingdrush) {
-      ubl_metadata_synchronization_handle_batch($oaiurl,NULL,$oairesult["resumptiontoken"],$results,$usingdrush,$mapping,$context);
+      ubl_metadata_synchronization_handle_batch($oaiurl,$newoaiparams,$results,$usingdrush,$mapping,$context);
     }
     else {
       // add an extra batch to handle the resumption token
@@ -224,7 +273,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$date = NULL, $resump
       $batch_next_set = $batch['current_set'] + 1;
       $batch_set = &$batch['sets'][$batch_next_set];
   
-      $batch_set['operations'][] = array('ubl_metadata_synchronization_handle_batch', array($oaiurl,NULL,$oairesult["resumptiontoken"],$results));
+      $batch_set['operations'][] = array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$newoaiparams,$results,$usingdrush,$mapping));
       $batch_set['operations'][] = array('ubl_metadata_synchronization_almost_ready', array());
   
       $batch_set['file'] = drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc';
@@ -268,7 +317,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$date = NULL, $resump
         drush_log($text, (count($results['syncerrors']) == 0)?'ok':'warning');
       }
       else {
-        drupal_set_message($text, (count($results['syncerrors']) == 0)?'ok':'warning');
+        drupal_set_message($text, (count($results['syncerrors']) == 0)?'status':'warning');
       }
     }
   }

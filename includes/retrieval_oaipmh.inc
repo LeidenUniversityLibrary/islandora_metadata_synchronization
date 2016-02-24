@@ -1,5 +1,9 @@
 <?php
 
+/**
+* functions to retrieve metadata from a OAI-PMH compatible source
+**/
+
 function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl,$syncid,$idprefix = NULL) {
   if (!isset($oaibaseurl)) {
     drupal_set_message(t("Please provide a valid OAI-PMH url in settings"));
@@ -64,18 +68,21 @@ function ubl_metadata_synchronization_run_xsl_transform($info) {
   return $output;
 }
 
-function ubl_metadata_synchronization_identifiers_for_changed_metadata($url, $date = NULL, $resumptionToken = NULL) {
+function ubl_metadata_synchronization_identifiers_for_changed_metadata($url, $oaiparams) {
   module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
   if (isset($url)) {
      $oailiurl = $url . "?verb=ListIdentifiers";
 
-     if (isset($resumptionToken) && strlen($resumptionToken)) {
-       $oailiurl .= '&resumptionToken='.$resumptionToken;
+     if (isset($oaiparams['resumptiontoken']) && strlen($oaiparams['resumptiontoken'])) {
+       $oailiurl .= '&resumptionToken='.$oaiparams['resumptiontoken'];
      }
      else {
-       $oailiurl .= "&metadataPrefix=marc21";
-       if (isset($date) && strlen($date)) {
-         $oailiurl .= "&from=" . $date;
+       $oailiurl .= "&metadataPrefix=" . (isset($oaiparams['metadataprefix'])?$oaiparams['metadataprefix']:"marc21");
+       if (isset($oaiparams['date']) && strlen($oaiparams['date'])) {
+         $oailiurl .= "&from=" . $oaiparams['date'];
+       }
+       if (isset($oaiparams['set']) && strlen($oaiparams['set'])) {
+         $oailiurl .= "&set=" . $oaiparams['set'];
        }
      }
      $data = @file_get_contents($oailiurl);

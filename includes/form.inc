@@ -20,8 +20,13 @@
  */
 
 function number_of_sources() {
+  // how many sources can be defined in the admin form
   return 3;
 }
+
+/**
+* Implements hook_form().
+**/
 
 function ubl_metadata_synchronization_settings_form(array $form, array &$form_state) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
@@ -54,7 +59,7 @@ function ubl_metadata_synchronization_settings_form(array $form, array &$form_st
         '#type' => 'fieldset',
         '#title' => t('Source '.$i),   
      );
-     if (array_key_exists('source'.$i.'_retrieval_url', $form_state['input']) && strlen($form_state['input']['source'.$i.'_retrieval_url']) > 0) {
+     if (isset($form_state['input']['source'.$i.'_retrieval_url']) && strlen($form_state['input']['source'.$i.'_retrieval_url']) > 0) {
        $retrievalurl = $form_state['input']['source'.$i.'_retrieval_url'];
      }
      else { 
@@ -85,6 +90,13 @@ function ubl_metadata_synchronization_settings_form(array $form, array &$form_st
          '#markup' => $markup,
        );
      }
+
+     $form['ubl_metadata_synchronization_sources_fieldset']['group'.$i]['source'.$i.'_set'] = array(
+        '#type' => 'textfield',
+        '#title' => t('Set'),
+        '#default_value' => variable_get('ubl_metadata_synchronization_source'.$i.'_set'),
+        '#description' => t('The sepcific set to use at this end point, leave empty to use no set.'),
+     );
 
      $form['ubl_metadata_synchronization_sources_fieldset']['group'.$i]['source'.$i.'_id_prefix'] = array(
         '#type' => 'textfield',
@@ -129,6 +141,10 @@ function ubl_metadata_synchronization_settings_form(array $form, array &$form_st
    return $form;
 }
 
+/**
+* Implements hook_form_validate().
+**/
+
 function ubl_metadata_synchronization_settings_form_validate(array $form, array &$form_state) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
   module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
@@ -169,9 +185,14 @@ function ubl_metadata_synchronization_settings_form_validate(array $form, array 
   }
 }
 
+/**
+* Implements hook_form_submit().
+**/
+
 function ubl_metadata_synchronization_settings_form_submit(array $form, array &$form_state) {
   for ($i = 1; $i <= number_of_sources(); $i++) {
     variable_set('ubl_metadata_synchronization_source'.$i.'_retrieval_url', $form_state['values']['source'.$i.'_retrieval_url']);
+    variable_set('ubl_metadata_synchronization_source'.$i.'_set', $form_state['values']['source'.$i.'_set']);
     variable_set('ubl_metadata_synchronization_source'.$i.'_id_prefix', $form_state['values']['source'.$i.'_id_prefix']);
     variable_set('ubl_metadata_synchronization_source'.$i.'_dsid', $form_state['values']['source'.$i.'_dsid']);
     variable_set('ubl_metadata_synchronization_source'.$i.'_path', $form_state['values']['source'.$i.'_path']);
@@ -179,14 +200,20 @@ function ubl_metadata_synchronization_settings_form_submit(array $form, array &$
   drupal_set_message(t('The settings have been saved!'));
 }
 
+/**
+* Implements hook_form_submit().
+**/
+
 function ubl_metadata_synchronization_start_sync_submit(array $form, array &$form_state) {
   module_load_include('inc','ubl_metadata_synchronization','includes/synchronize');
   $date = $form_state['values']['last_synchronization_date'];
 
-  ubl_metadata_synchronization_start_sync_from_date($date);
+  ubl_metadata_synchronization_start_sync(array('date' => $date));
 }
 
-/* Item synchronization form */
+/**
+* Implements hook_form().
+**/
 
 function sync_id_editor_form(array $form, array &$form_state, AbstractObject $object) {
   module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
@@ -298,6 +325,10 @@ function sync_id_editor_form(array $form, array &$form_state, AbstractObject $ob
   return $form;
 }
 
+/**
+* Implements the form submit to store a given sync id for 1 record
+**/
+
 function sync_id_editor_form_set_sync_id_submit(array $form, array &$form_state) {
   $object = $form_state['object'];
   $syncid = $form_state['values']['sync_id'];
@@ -321,6 +352,10 @@ function sync_id_editor_form_set_sync_id_submit(array $form, array &$form_state)
   drupal_set_message("Sync ID set");
 }
 
+/**
+* Implements the form submit to synchronize 1 record based on a sbumitted identifier
+**/
+
 function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &$form_state) {
   module_load_include('inc','ubl_metadata_synchronization','includes/synchronize');
   $object = $form_state['object'];
@@ -342,6 +377,10 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
     drupal_set_message(t("Synchronization successful!"));
   }
 }
+
+/**
+* Implements the form submit to synchronize 1 record that has it's own identifier stored in the metadata
+**/
 
 function sync_id_editor_form_synchronize_submit(array $form, array &$form_state) {
   module_load_include('inc','ubl_metadata_synchronization','includes/synchronize');

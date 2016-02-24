@@ -12,8 +12,9 @@ Records met een valide identifier kunnen automatisch en in batch gesynchroniseer
 
 Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> UBL metadata syncrhonization. Hier kunnen tot 3 bronnen ingesteld worden. Per bron stel je de volgende dingen in:
 * Retrieval URL: Eerst stel je de OAI-PMH url in. Bij het bewaren wordt meteen duidelijk of de bron valide is.
+* Set: Eventueel kan hier de naam van een set binnen die bron ingesteld worden.
 * Datastream ID: In het Datastream veld stel je de DSID van de metadata die de identifier bevat in. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
-* Prefix ID: aangezien het voor kan komen dat de metadata wel een identifier bevat, maar deze niet binnen OAI-PMH gebruikt kan worden vanwege het missen van de nodig prefix, kan een standaard identifier prefix ingesteld worden
+* Prefix ID: aangezien het voor kan komen dat de metadata wel een identifier bevat, maar deze niet binnen OAI-PMH gebruikt kan worden vanwege het missen van de nodig prefix, kan een standaard identifier prefix ingesteld worden. Zie synchroniseren met drush voor mappings van identifiers.
 * XPath ID: in het xpath veld stel je het xpath in waarmee binnen de metadata de identifier gevonden kan worden. De volgende namespaces zijn bekend: mods, dc, enz.
 
 Na het instellen van 1 of meerdere bronnen druk je op "Save configuration". Je kan meteen zien of de instellingen goed zijn.
@@ -30,11 +31,12 @@ In het admin scherm (Islandora -> Islandora Utility Modules -> UBL metadata sync
 ## Synchroniseren met drush
 
 Ook is het mogelijk om een batch synchronisatie via drush te starten. Dit heeft als voordeel dat er iets meer controle is over hoe gesynchroniseerd wordt en eventueel kan men het drush commando gescheduled laten draaien.
-Het drush commando heet "start_metadata_synchronization" en heeft de volgende opties:
-* --date: een verplicht datum veld (YYYY-MM-DD). De metadata die sinds deze datum is gewijzigd wordt gebruikt om te synchroniseren. Eventueel kan de waarde "last" gebruikt worden om te synchroniseren sinds de datum dat het voor het laatst gelukt is.
-* --source: de bron die gebruikt moet worden voor de synchronisatie. Dit is het nummer van de bron zoals die in het admin scherm is ingevuld. Als deze optie niet gebruikt wordt, dan wordt zelf de eerste bron met een retrieve URL gebruikt.
+Het drush commando heet "start_metadata_synchronization" (smds) en heeft de volgende opties:
+* --date: een verplicht datum veld (YYYY-MM-DD), maar niet te gebruiken samen met de optie --ids_file. De metadata die sinds deze datum is gewijzigd wordt gebruikt om te synchroniseren. Eventueel kan de waarde "last" gebruikt worden om te synchroniseren sinds de datum dat het voor het laatst gelukt is.
+* --source: de bron die gebruikt moet worden voor de synchronisatie. Dit is het nummer van de bron zoals die in het admin scherm is ingevuld. Als deze optie niet gebruikt wordt, dan worden alle bronnen met een retrieve URL gebruikt.
 * --mapping_file: eventueel kan een bestand mee worden gegeven waar de mapping tussen de identifiers in de bron en de identifiers in Islandora staat. Dit is een tab delimited bestand waar op elke regel eerst een identifier die binnen de bron gebruikt wordt staat, gevolgd door een tab en dan de identifier die binnen een record in Islandora staat.
 * --mapping_pattern en --mapping_replacement: als de identifier binnen de bron erg lijkt op de identifier binnen het record in Islandora, kunnen deze twee opties gebruikt worden om de identifier om te schrijven. --mapping_pattern verwacht een reguliere expressie. Als dit patroon gevonden wordt in de identifier dan wordt de waarde van --mapping_replacement gebruikt om dit te vervangen.
+* --ids_file: ook kan een bestand opgegeven worden met de ID's van Islandora records die gesynchroniseerd moeten worden. Deze optie kan niet samen met de --date optie gebruikt worden. Op elke regel van het bestand moet een ID staan die uniek een Islandora record aanwijst. Dit kan het Fedora ID zijn, maar ook een identifier die in de metadata is opgenomen. Eerst wordt geprobeerd om het gevonden record te synchroniseren op basis van de ID waarmee het record gevonden werd. Als dit niet lukt wordt geprobeerd om een identifier uit de bestaande metadata te halen en daarmee wordt dan gesynchroniseerd. Als er gebruik wordt gemaakt van de --mapping_* opties dan wordt de mapping ingezet; eerst voor de identifier waarmee het record gevonden werd, als dat mislukt ook voor de identifier uit de metadata van het record.
 
  
 

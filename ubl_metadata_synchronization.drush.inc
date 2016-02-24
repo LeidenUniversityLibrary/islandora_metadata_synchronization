@@ -13,16 +13,24 @@ function ubl_metadata_synchronization_drush_command() {
       'mapping_pattern' => 'Optional, but use in conjunction with mapping_replacement. Use this to make another mapping for the OAI identifier',
       'mapping_replacement' => 'Optional, but use in conjunction with mapping_pattern. Use this to make another mapping for the OAI identifier',
       'mapping_file' => 'Optional, a file containing a mapping for the identifiers. Each line contains 2 identifiers separated by a tab. The first identifier is the one that is used in the source, the second is the one that is used in islandora.',
+      'ids_file' => 'Optional, a file containing a list of identifiers. Only those identifiers will be synchronised. The mapping are tried on those identifiers as well and if they fail, the identifier from the metadata is used with the mapping.',
     ),
     'aliases' => array('smds'),
     'examples' => array(
       'drush start_metadata_synchronization --source=1 --date=last',
       'drush smds --source=2 --date=2015-12-15',
       'drush smds --source=2 --date=2015-12-15 --mapping_pattern="/oai:archimedes.leidenuniv.nl:/" --mapping_replacement="oai:disc.leidenuniv.nl:"',
+      'drush smds --source=2 --date=2015-12-15 --mapping_file=/tmp/mapping_file.txt',
+      'drush smds --source=2 --ids_file=/tmp/ids_file.txt',
+      'drush smds --source=2 --ids_file=/tmp/ids_file.txt --mapping_file=/tmp/mapping_file.txt',
     ),
   );
   return $items;
 }
+
+/**
+* Implements drush_hook_COMMAND_validate().
+**/
 
 function drush_ubl_metadata_synchronization_start_metadata_synchronization_validate() {
   $sourceid = drush_get_option('source');
@@ -34,7 +42,11 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
   }
 
   $date = drush_get_option('date');
-  if (preg_match("/^(?:last|\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d:\d\dZ)?)$/",$date) != 1) {
+  $idsfile = drush_get_option('ids_file');
+  if (($date != null && $idsfile != null) || ($date == null && $idsfile == null)) {
+    return drush_set_error("either option date or option ids_file should exist, not neither and not both");
+  }
+  if ($date != null && preg_match("/^(?:last|\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d:\d\dZ)?)$/",$date) != 1) {
     return drush_set_error("the option date is mandatory and should be the value 'last' or a date formatted as YYYY-MM-DD");
   } 
 
@@ -55,18 +67,29 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
       return drush_set_error("mapping_file '$mapfile' does not exist");
     }
   }
+  if ($idsfile != null) {
+    if ( ! file_exists($idsfile)) {
+      return drush_set_error("ids_file '$idsfile' does not exist");
+    }
+  }
 
   return TRUE;
 }
 
+/**
+* Implements drush_hook_COMMAND().
+**/
+
 function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   module_load_include('inc','ubl_metadata_synchronization','includes/synchronize');
+  module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
 
   $sourceid = drush_get_option('source');
   $date = drush_get_option('date');
   $mappat = drush_get_option('mapping_pattern');
   $maprep = drush_get_option('mapping_replacement');
   $mapfile = drush_get_option('mapping_file');
+  $idsfile = drush_get_option('ids_file');
 
   $mapping = null;
   if ($mappat != null && $maprep != null) {
@@ -85,7 +108,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
         }
         $key = $comps[0];
         $value = $comps[1];
-        if (array_key_exists($key,$mapping) && $mapping[$key] !== $value) {
+        if (isset($mapping[$key]) && $mapping[$key] !== $value) {
           $linenumber = $index + 1;
           return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: source id '$key' maps to 2 different target ids");
         }
@@ -94,17 +117,75 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     }
   }
 
-  if ($date == 'last') {
+  if ($date === 'last') {
     $date = variable_get('ubl_metadata_synchronization_last_synchronization_date');
     drush_log("Synchronizing from date $date");
   }
   
-  if ($sourceid == null) {
-    ubl_metadata_synchronization_start_sync_from_date($date,true,$mapping);
+  if ($idsfile == null) {
+    $oaiparams = array('date' => $date);
+    if ($sourceid == null) {
+      ubl_metadata_synchronization_start_sync($oaiparams,true,$mapping);
+    }
+    else {
+       $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_retrieval_url');
+      ubl_metadata_synchronization_start_sync_with_url($retrieveurl,$oaiparams,true,$mapping);
+    }
   }
   else {
-     $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_retrieval_url');
-    ubl_metadata_synchronization_start_sync_with_url_from_date($retrieveurl,$date,true,$mapping);
+    $sources = ubl_metadata_synchronization_sources($sourceid);
+    $idsstr = file_get_contents($idsfile);
+    $ids = str_getcsv($idsstr,"\n");
+    foreach ($ids as $index => $id) {
+      if (strlen($id) == 0) {
+        continue;
+      }
+      $object = find_fedora_object_for_id($id);
+      if ($object) {
+        $usedoaiurls = array();
+        foreach ($sources as $source) {
+          $oaiurl = $source['url'];
+          if (isset($usedoaiurls[$oaiurl])) {
+            break;
+          }
+          $usedoaiurls[$oaiurl] = 1;
+          $idprefix = $source['idprefix'];
+          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$id,$idprefix);
+          if ($t) {
+            $anId = ubl_metadata_synchronization_map_identifier($id,$mapping);
+            if ($id !== $anId) {
+              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$idprefix);
+            }
+          }
+          if ($t) {
+            $dsid = $source['dsid'];
+            $xpath = $source['xpath'];
+            $anId = ubl_metadata_synchronization_get_identifier($object,$dsid,$xpath);
+            if ($anId != null) {
+              if ($id !== $anId) {
+                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$idprefix);
+                if ($t) {
+                  $anotherId = ubl_metadata_synchronization_map_identifier($anId,$mapping);
+                  if ($anId !== $anotherId) {
+                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anotherId,$idprefix);
+                  }
+                }
+              }
+            }
+          }
+          if ($t) {
+            drush_log("Cannot synchronize object $id: $t", "warning"); 
+          }
+          else {
+            drush_log("Successfully synchronized object $id","ok");
+            break;
+          }
+        }
+      }
+      else {
+        drush_log("Cannot find object $id", "warning"); 
+      }
+    }
   }
 }
 

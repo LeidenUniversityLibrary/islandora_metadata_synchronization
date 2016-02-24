@@ -1,5 +1,5 @@
 name = Metadata synchronization
-description = Metadata synchronization from a library system (Aleph/Alma) to Islandora, based on identifier
+description = Metadata synchronization from a library system (Aleph/Alma) to Islandora, based on OAI-PMH and an identifier
 dependencies[] = islandora_marcxml
 dependencies[] = islandora_batch
 package = UBL

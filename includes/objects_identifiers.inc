@@ -1,5 +1,9 @@
 <?php
 
+/**
+* functions to extract a identifier from a specific datastream of a specific object, optionally with an XPath if it is a XML datastream.
+**/
+
 function ubl_metadata_synchronization_get_identifier(AbstractObject $object,$dsid,$xpath = NULL) {
   $syncid = NULL;
   if (isset($object[$dsid])) {
