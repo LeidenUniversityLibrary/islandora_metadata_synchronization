@@ -62,7 +62,7 @@ function ubl_metadata_synchronization_run_xsl_transform($info) {
   $output = $processor->transformToXML($input);
 
   if (!$output) {
-    dpm(libxml_get_errors());
+    //dpm(libxml_get_errors());
   }
 
   return $output;

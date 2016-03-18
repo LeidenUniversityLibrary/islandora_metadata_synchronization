@@ -222,6 +222,7 @@ function sync_id_editor_form(array $form, array &$form_state, AbstractObject $ob
   $form_state['object'] = $object;
 
   $source_with_url = NULL;
+  $sources_with_url = array();
   $sync_source = NULL;
   $saved_sync_id = '';
   if (isset($object['SYNCID'])) {
@@ -247,6 +248,7 @@ function sync_id_editor_form(array $form, array &$form_state, AbstractObject $ob
       if (!isset($source_with_url)) {
         $source_with_url = $i;
       }
+      $sources_with_url[$i] = $i;
       $foundxml = NULL;
       $foundid = ubl_metadata_synchronization_get_identifier($object,$dsid,$xpath);
     
@@ -311,12 +313,15 @@ function sync_id_editor_form(array $form, array &$form_state, AbstractObject $ob
     '#size' => 120,
     '#type' => 'textfield',
   );
-  $form['ubl_metadata_synchronization_sync_item_set_identifier']['sync_w_syncid'] = array(
-    '#type' => 'submit',
-    '#value' => t('Synchronize with this Sync ID and source !source', array('!source' => $source_with_url)),
-    '#submit' => array('sync_id_editor_form_synchronize_with_syncid_submit'),
-    '#disabled' => !($source_with_url > 0),
-  );
+  for ($i = 1; $i <= number_of_sources(); $i++) {
+    $form['ubl_metadata_synchronization_sync_item_set_identifier']['sync_w_syncid'.$i] = array(
+      '#type' => 'submit',
+      '#value' => t('Synchronize with this Sync ID and source !source', array('!source' => $i)),
+      '#submit' => array('sync_id_editor_form_synchronize_with_syncid_submit'),
+      '#name' => 'syncid_'.$i,
+      '#disabled' => !($sources_with_url[$i] > 0),
+    );
+  }
   $form['ubl_metadata_synchronization_sync_item_set_identifier']['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Set Sync ID'),
@@ -365,7 +370,9 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
     drupal_set_message("specify a Sync ID",'error'); 
     return;
   }
-  $sourceurlnr = $form_state['values']['source_url_nr'];
+  $clickedname = $form_state['clicked_button']['#name'];
+  preg_match('/^syncid_(\d+)$/',$clickedname,$matches); 
+  $sourceurlnr = $matches[1] ?: 0;
   $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$sourceurlnr.'_retrieval_url');
 
   $result = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$retrieveurl,$syncid);
