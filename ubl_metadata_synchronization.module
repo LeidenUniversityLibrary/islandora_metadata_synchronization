@@ -16,10 +16,39 @@ function ubl_metadata_synchronization_menu() {
   $items['admin/islandora/tools/ubl_metadata_synchronization'] = array(
     'title' => 'UBL metadata synchronization',
     'description' => 'Settings for UBL metadata synchronization.',
+    'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
-    'page arguments' => array('ubl_metadata_synchronization_settings_form'),
-    'access arguments' => array('ubl metadata synchronization'),
-    'file' => 'includes/form.inc',
+    'page arguments' => array('ubl_metadata_synchronization_start_sync_form'),
+    'access arguments' => array('ubl metadata synchronization start'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/ubl_metadata_synchronization/start'] = array(
+    'title' => 'Start synchronization',
+    'description' => 'Start UBL metadata synchronization.',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ubl_metadata_synchronization_start_sync_form'),
+    'access arguments' => array('ubl metadata synchronization start'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/ubl_metadata_synchronization/sources'] = array(
+    'title' => 'Sources',
+    'description' => 'Sources for UBL metadata synchronization.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ubl_metadata_synchronization_sources_form'),
+    'access arguments' => array('ubl metadata synchronization sources'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/ubl_metadata_synchronization/stylesheets'] = array(
+    'title' => 'Stylesheets',
+    'description' => 'Manage the stylesheets for UBL metadata synchronization.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('ubl_metadata_synchronization_manage_stylesheets_form'),
+    'access arguments' => array('ubl metadata synchronization stylesheets'),
+    'file' => 'includes/stylesheets.form.inc',
   );
   $items['islandora/object/%islandora_object/manage/syncid'] = array(
     'title' => 'Synchronize',
@@ -27,8 +56,8 @@ function ubl_metadata_synchronization_menu() {
     'weight' => 0,
     'page callback' => 'drupal_get_form',
     'page arguments' => array('sync_id_editor_form', 2),
-    'access arguments' => array('ubl metadata synchronization'),
-    'file' => 'includes/form.inc',
+    'access arguments' => array('ubl metadata synchronization syncid'),
+    'file' => 'includes/object.form.inc',
   );
 
   return $items;
@@ -40,8 +69,17 @@ function ubl_metadata_synchronization_menu() {
 
 function ubl_metadata_synchronization_permission() {
   return array(
-    'ubl metadata synchronization' => array(
-      'title' => 'Edit the synchronization settings, ID and synchronize metadata',
+    'ubl metadata synchronization start' => array(
+      'title' => 'Start a batch synchronization from a specific date',
+    ),
+    'ubl metadata synchronization sources' => array(
+      'title' => 'Edit the synchronization source settings',
+    ),
+    'ubl metadata synchronization stylesheets' => array(
+      'title' => 'Manage the stylesheets that are used to transform the metadata',
+    ),
+    'ubl metadata synchronization syncid' => array(
+      'title' => 'Synchronize a single object',
     ),
   );
 }

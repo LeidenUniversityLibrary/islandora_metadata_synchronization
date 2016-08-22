@@ -96,12 +96,17 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     $mapping = array("_pattern" => $mappat, "_replacement" => $maprep);
   }
   else if ($mapfile != null) {
+    $fieldseperator = "\t";
     $mapping = array();
     $content = file_get_contents($mapfile);
     $contentarray = str_getcsv($content,"\n"); 
     foreach ($contentarray as $index => $line) {
       if (strlen($line) > 0) {
-        $comps = str_getcsv($line,"\t");
+        $comps = str_getcsv($line,$fieldseperator);
+        if (count($comps) != 2) {
+          $fieldseperator = ",";
+          $comps = str_getcsv($line,$fieldseperator);
+        }
         if (count($comps) != 2) {
           $linenumber = $index + 1;
           return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: not 2 components");
@@ -123,13 +128,16 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   }
   
   if ($idsfile == null) {
-    $oaiparams = array('date' => $date);
+    $params = array('date' => $date);
     if ($sourceid == null) {
-      ubl_metadata_synchronization_start_sync($oaiparams,true,$mapping);
+      ubl_metadata_synchronization_start_sync($params,true,$mapping);
     }
     else {
-       $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_retrieval_url');
-      ubl_metadata_synchronization_start_sync_with_url($retrieveurl,$oaiparams,true,$mapping);
+       $oaipmh_url = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_oaipmh_url');
+       $params['set'] = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_set');
+       $params['mdxsl'] = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_mdxsl');
+
+      ubl_metadata_synchronization_start_sync_with_url($oaipmh_url,$params,true,$mapping);
     }
   }
   else {
@@ -144,30 +152,39 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
       if ($object) {
         $usedoaiurls = array();
         foreach ($sources as $source) {
-          $oaiurl = $source['url'];
+          $oaiurl = $source['oaipmh_url'];
           if (isset($usedoaiurls[$oaiurl])) {
             break;
           }
           $usedoaiurls[$oaiurl] = 1;
-          $idprefix = $source['idprefix'];
-          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$id,$idprefix);
+          $idprefix = $source['id_prefix'];
+          if (isset($idprefix)) {
+            if (strlen($id) < strlen($idprefix)) {
+              $id = $idprefix . $id;
+            } 
+          }
+          $mdxsl = $source['mdxsl'];
+          $mdprefix = $source['mdprefix'];
+          $dsid = $source['target_dsid'];
+
+          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$id,$mdprefix,$mdxsl,$dsid);
           if ($t) {
             $anId = ubl_metadata_synchronization_map_identifier($id,$mapping);
             if ($id !== $anId) {
-              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$idprefix);
+              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$mdprefix,$mdxsl,$dsid);
             }
           }
           if ($t) {
-            $dsid = $source['dsid'];
-            $xpath = $source['xpath'];
+            $dsid = $source['id_dsid'];
+            $xpath = $source['path'];
             $anId = ubl_metadata_synchronization_get_identifier($object,$dsid,$xpath);
             if ($anId != null) {
               if ($id !== $anId) {
-                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$idprefix);
+                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$mdprefix,$mdxsl,$dsid);
                 if ($t) {
                   $anotherId = ubl_metadata_synchronization_map_identifier($anId,$mapping);
                   if ($anId !== $anotherId) {
-                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anotherId,$idprefix);
+                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anotherId,$mdprefix,$mdxsl,$dsid);
                   }
                 }
               }

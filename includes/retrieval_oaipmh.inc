@@ -4,19 +4,14 @@
 * functions to retrieve metadata from a OAI-PMH compatible source
 **/
 
-function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl,$syncid,$idprefix = NULL) {
+function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl,$syncid,$mdprefix) {
   if (!isset($oaibaseurl)) {
     drupal_set_message(t("Please provide a valid OAI-PMH url in settings"));
     return FALSE;
   }
-  if (isset($idprefix)) {
-    if (strlen($syncid) < strlen($idprefix)) {
-      $syncid = $idprefix . $syncid;
-    } 
-  }
   $oaigetrecurl = $oaibaseurl 
                 . "?verb=GetRecord"
-                . "&metadataPrefix=marc21"
+                . "&metadataPrefix=" . $mdprefix
                 . "&identifier=" . $syncid;
 
   $data = file_get_contents($oaigetrecurl);
@@ -25,13 +20,7 @@ function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl,$sync
     return FALSE;
   }
 
-  $transform_args = array(
-    'xsl' => drupal_get_path('module', 'ubl_metadata_synchronization') . '/xsl/OAIMARC2MARC21slim.xsl',
-    'input' => $data,
-  );
-  $transformed_xml = ubl_metadata_synchronization_run_xsl_transform($transform_args); 
-
-  return $transformed_xml;
+  return $data;
 }
 
 function ubl_metadata_synchronization_test_oai_pmh_url($url) {
@@ -52,39 +41,24 @@ function ubl_metadata_synchronization_test_oai_pmh_url($url) {
   return FALSE; 
 }
 
-function ubl_metadata_synchronization_run_xsl_transform($info) {
-  $xsl = new DOMDocument();
-  $xsl->load($info['xsl']);
-  $input = new DOMDocument();
-  $input->loadXML($info['input']);
-  $processor = new XSLTProcessor();
-  $processor->importStylesheet($xsl);
-  $output = $processor->transformToXML($input);
-
-  if (!$output) {
-    //dpm(libxml_get_errors());
-  }
-
-  return $output;
-}
-
-function ubl_metadata_synchronization_identifiers_for_changed_metadata($url, $oaiparams) {
+function ubl_metadata_synchronization_identifiers_for_changed_metadata($url, $params) {
   module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
   if (isset($url)) {
      $oailiurl = $url . "?verb=ListIdentifiers";
 
-     if (isset($oaiparams['resumptiontoken']) && strlen($oaiparams['resumptiontoken'])) {
-       $oailiurl .= '&resumptionToken='.$oaiparams['resumptiontoken'];
+     if (isset($params['resumptiontoken']) && strlen($params['resumptiontoken'])) {
+       $oailiurl .= '&resumptionToken='.$params['resumptiontoken'];
      }
      else {
-       $oailiurl .= "&metadataPrefix=" . (isset($oaiparams['metadataprefix'])?$oaiparams['metadataprefix']:"marc21");
-       if (isset($oaiparams['date']) && strlen($oaiparams['date'])) {
-         $oailiurl .= "&from=" . $oaiparams['date'];
+       $oailiurl .= "&metadataPrefix=" . (isset($params['mdprefix'])?$params['mdprefix']:"oai_dc");
+       if (isset($params['date']) && strlen($params['date'])) {
+         $oailiurl .= "&from=" . $params['date'];
        }
-       if (isset($oaiparams['set']) && strlen($oaiparams['set'])) {
-         $oailiurl .= "&set=" . $oaiparams['set'];
+       if (isset($params['set']) && strlen($params['set'])) {
+         $oailiurl .= "&set=" . $params['set'];
        }
      }
+
      $data = @file_get_contents($oailiurl);
 
      if (isset($data)) {

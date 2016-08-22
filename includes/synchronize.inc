@@ -4,27 +4,27 @@
 * functions for synchronizing metadat with an external source 
 **/
 
-function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $retrievalurl, $syncid, $idprefix = NULL) {
+function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS') {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
-  $marcxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($retrievalurl,$syncid, $idprefix);
+  $oaimdxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url,$syncid,$mdprefix);
 
-  if (!$marcxml) {
-    return t("No metadata found for object @objid via @url with sync id @syncid", array("@objid" => $object->id, "@url" => $retrievalurl, "@syncid" => $syncid));
+  if (!$oaimdxml) {
+    return t("No metadata found for object @objid via @url with sync id @syncid", array("@objid" => $object->id, "@url" => $oaipmh_url, "@syncid" => $syncid));
   }
   
-  ubl_metadata_synchronization_save_xml($object,$marcxml,'MARC','MARC XML');
+  //ubl_metadata_synchronization_save_xml($object,$oaimdxml,'OAIMD','OAIMD XML');
 
-  $modsxml = ubl_metadata_synchronization_create_mods_from_marc($marcxml);
+  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml,$mdxsl);
 
-  if (!$modsxml) {
-    return t("Could not create MODS for object @objid with sync id @syncid", array("@objid" => $object->id, "@syncid" => $syncid));
+  if (!$xml) {
+    return t("Could not create @dsid for object @objid with sync id @syncid", array("@dsid" => $dsid, "@objid" => $object->id, "@syncid" => $syncid));
   }
-  
-  $ismodschanged = ubl_metadata_synchronization_save_xml($object,$modsxml,'MODS','MODS XML');
 
-  if ($ismodschanged) {
-    $dcxml = ubl_metadata_synchronization_create_dc_from_mods($modsxml);
+  $ischanged = ubl_metadata_synchronization_save_xml($object,$xml,$dsid,$dsid.' XML');
+
+  if ($ischanged && ($dsid === 'MODS')) {
+    $dcxml = ubl_metadata_synchronization_create_dc_from_mods($xml);
 
  
     if (!$dcxml) {
@@ -57,28 +57,23 @@ function ubl_metadata_synchronization_save_xml(AbstractObject $object,$xml,$dsid
   return FALSE;
 }
 
-function ubl_metadata_synchronization_create_mods_from_marc($marcxml) {
-  module_load_include('inc','islandora_marcxml','includes/utilities');
-
-  $transform_args = array(
-    'xsl' => drupal_get_path('module', 'islandora_marcxml') . '/xsl/MARC21slim2MODS3-5.xsl',
-    'input' => $marcxml,
-  );
-  $transformed_xml = trim(islandora_marcxml_run_xsl_transform($transform_args));
-
-  return $transformed_xml;
+function ubl_metadata_synchronization_xsl_transform($xml,$xslfile) {
+  $xsl = new DOMDocument();
+  $xsl->load($xslfile);
+  $input = new DOMDocument();
+  $input->loadXML($xml);
+  $processor = new XSLTProcessor();
+  $processor->importStylesheet($xsl);
+  // XXX: Suppressing warnings regarding unregistered prefixes.
+  return trim(@$processor->transformToXML($input));
 }
 
 function ubl_metadata_synchronization_create_dc_from_mods($modsxml) {
   module_load_include('inc','islandora_marcxml','includes/utilities');
 
-  $transform_args = array(
-    'xsl' => drupal_get_path('module', 'islandora_batch') . '/transforms/mods_to_dc.xsl',
-    'input' => $modsxml,
-  );
-  $transformed_xml = trim(islandora_marcxml_run_xsl_transform($transform_args));
+  $xsl = drupal_get_path('module', 'islandora_batch') . '/transforms/mods_to_dc.xsl';
 
-  return $transformed_xml;
+  return ubl_metadata_synchronization_xsl_transform($modsxml,$xsl);
 }
 
 function ubl_metadata_synchronization_sources($sourceid = null) {
@@ -88,42 +83,52 @@ function ubl_metadata_synchronization_sources($sourceid = null) {
     if (($sourceid != null) && ($sourceid != $i)) {
       continue;
     }
-    $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$i.'_retrieval_url');
-    if (isset($retrieveurl) && strlen($retrieveurl) > 0) {
+    $oaipmh_url = variable_get('ubl_metadata_synchronization_source'.$i.'_oaipmh_url');
+    if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
       $set = variable_get('ubl_metadata_synchronization_source'.$i.'_set');
+      $mdprefix = variable_get('ubl_metadata_synchronization_source'.$i.'_mdprefix');
       $idprefix = variable_get('ubl_metadata_synchronization_source'.$i.'_id_prefix');
-      $dsid = variable_get('ubl_metadata_synchronization_source'.$i.'_dsid');
-      $xpath = variable_get('ubl_metadata_synchronization_source'.$i.'_path');
+      $iddsid = variable_get('ubl_metadata_synchronization_source'.$i.'_id_dsid');
+      $targetdsid = variable_get('ubl_metadata_synchronization_source'.$i.'_target_dsid');
+      $path = variable_get('ubl_metadata_synchronization_source'.$i.'_path');
+      $mdxsl = variable_get('ubl_metadata_synchronization_source'.$i.'_mdxsl');
      
       $sources[$i] = array(
-                      'url'      => $retrieveurl,
-                      'set'      => $set,
-                      'idprefix' => $idprefix,
-                      'dsid'     => $dsid,
-                      'xpath'    => $xpath,
+                      'oaipmh_url' => $oaipmh_url,
+                      'set'          => $set,
+                      'mdprefix'     => $mdprefix,
+                      'id_prefix'    => $idprefix,
+                      'id_dsid'      => $iddsid,
+                      'target_dsid'  => $targetdsid,
+                      'path'         => $path,
+                      'mdxsl'        => $mdxsl,
                      );
     }
   } 
   return $sources;
 }
 
-function ubl_metadata_synchronization_start_sync($oaiparams, $usingdrush = FALSE, $mapping = null) {
+function ubl_metadata_synchronization_start_sync($params, $usingdrush = FALSE, $mapping = null) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
   $oaiurls = array();
 
   for ($i = 1; $i <= 99; $i++) {
-    $retrieveurl = variable_get('ubl_metadata_synchronization_source'.$i.'_retrieval_url');
+    $oaipmh_url = variable_get('ubl_metadata_synchronization_source'.$i.'_oaipmh_url');
     $set = variable_get('ubl_metadata_synchronization_source'.$i.'_set');
-    if (isset($retrieveurl) && strlen($retrieveurl) > 0) {
-      $key = $retrieveurl;
+    $mdprefix = variable_get('ubl_metadata_synchronization_source'.$i.'_mdprefix');
+    $mdxsl = variable_get('ubl_metadata_synchronization_source'.$i.'_mdxsl');
+    if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
+      $key = $oaipmh_url;
       if (isset($set)) {
         $key .= '_' . $set;
       }
       if ( ! isset($oaiurls[$key])) {
-        $newoaiparams = $oaiparams; 
-        $newoaiparams['set'] = $set;
-        ubl_metadata_synchronization_start_sync_with_url($retrieveurl, $newoaiparams, $usingdrush, $mapping);
+        $newparams = $params; 
+        $newparams['set'] = $set;
+        $newparams['mdprefix'] = $mdprefix;
+        $newparams['mdxsl'] = $mdxsl;
+        ubl_metadata_synchronization_start_sync_with_url($oaipmh_url, $newparams, $usingdrush, $mapping);
         $oaiurls[$key] = $i;
       }
     }
@@ -149,17 +154,17 @@ function ubl_metadata_synchronization_start_sync($oaiparams, $usingdrush = FALSE
   }
 }
 
-function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $oaiparams, $usingdrush = FALSE, $mapping = null) {
+function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $params, $usingdrush = FALSE, $mapping = null) {
   if ($usingdrush) {
-    drush_log(t("Starting sync with url '@url'!set.", array("@url" => $oaiurl, "!set" => ((isset($oaiparams["set"]) && strlen($oaiparams["set"]) > 0)?t(" and set '@set'", array("@set" => $oaiparams["set"])):''))));
+    drush_log(t("Starting sync with url '@url'!set.", array("@url" => $oaiurl, "!set" => ((isset($params["set"]) && strlen($params["set"]) > 0)?t(" and set '@set'", array("@set" => $params["set"])):''))));
     $cntxt = array();
-    ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams,array(), $usingdrush, $mapping,$cntxt);
+    ubl_metadata_synchronization_handle_batch($oaiurl,$params,array(), $usingdrush, $mapping,$cntxt);
   }
   else {
     $batch = array(
       'file' => drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc',
       'operations' => array(
-        array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$oaiparams,array(), $usingdrush, $mapping)),
+        array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$params,array(), $usingdrush, $mapping)),
         array('ubl_metadata_synchronization_almost_ready', array()),
       ),
       'finished' => 'ubl_metadata_synchronization_finished',
@@ -188,10 +193,10 @@ function ubl_metadata_synchronization_map_identifier($anId,$mapping) {
   return $anId;
 }
 
-function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results, $usingdrush, $mapping, &$context) {
+function ubl_metadata_synchronization_handle_batch($oaiurl,$params, $results, $usingdrush, $mapping, &$context) {
   module_load_include('inc','ubl_metadata_synchronization','includes/retrieval_oaipmh');
 
-  $oairesult = ubl_metadata_synchronization_identifiers_for_changed_metadata($oaiurl,$oaiparams);
+  $oairesult = ubl_metadata_synchronization_identifiers_for_changed_metadata($oaiurl,$params);
 
   if (isset($oairesult['oaierror'])) {
     if (($oairesult['oaierror'] === 'no record match the search criteria') && ! isset($oairesult['oaiidscount'])) {
@@ -225,6 +230,10 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results,
     return;
   }
 
+  $mdxsl = $params['mdxsl'];
+  $mdprefix = $params['mdprefix'];
+  $dsid = $params['target_dsid'];
+
   if ( ! isset($results['oairesponsedate'])) {
     $results['oairesponsedate'] = $oairesult['responsedate'];
   }
@@ -242,7 +251,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results,
     $anId = ubl_metadata_synchronization_map_identifier($anId,$mapping);
     $object = find_fedora_object_for_id($anId);
     if ($object) {
-      $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId);    
+      $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$mdprefix,$mdxsl,$dsid);    
       if ($t) {
         $results['syncerrors'][] = $t;
         if ($usingdrush) {
@@ -263,9 +272,9 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results,
     }
   }
   if (isset($oairesult["resumptiontoken"])) {
-    $newoaiparams = array('resumptiontoken' => $oairesult["resumptiontoken"]);
+    $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl);
     if ($usingdrush) {
-      ubl_metadata_synchronization_handle_batch($oaiurl,$newoaiparams,$results,$usingdrush,$mapping,$context);
+      ubl_metadata_synchronization_handle_batch($oaiurl,$newparams,$results,$usingdrush,$mapping,$context);
     }
     else {
       // add an extra batch to handle the resumption token
@@ -273,7 +282,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl,$oaiparams, $results,
       $batch_next_set = $batch['current_set'] + 1;
       $batch_set = &$batch['sets'][$batch_next_set];
   
-      $batch_set['operations'][] = array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$newoaiparams,$results,$usingdrush,$mapping));
+      $batch_set['operations'][] = array('ubl_metadata_synchronization_handle_batch', array($oaiurl,$newparams,$results,$usingdrush,$mapping));
       $batch_set['operations'][] = array('ubl_metadata_synchronization_almost_ready', array());
   
       $batch_set['file'] = drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc';
