@@ -10,12 +10,19 @@ Records met een valide identifier kunnen automatisch en in batch gesynchroniseer
 
 ## Instellingen
 
-Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> UBL metadata syncrhonization. Hier kunnen tot 3 bronnen ingesteld worden. Per bron stel je de volgende dingen in:
-* Retrieval URL: Eerst stel je de OAI-PMH url in. Bij het bewaren wordt meteen duidelijk of de bron valide is.
-* Set: Eventueel kan hier de naam van een set binnen die bron ingesteld worden.
-* Datastream ID: In het Datastream veld stel je de DSID van de metadata die de identifier bevat in. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
-* Prefix ID: aangezien het voor kan komen dat de metadata wel een identifier bevat, maar deze niet binnen OAI-PMH gebruikt kan worden vanwege het missen van de nodig prefix, kan een standaard identifier prefix ingesteld worden. Zie synchroniseren met drush voor mappings van identifiers.
-* XPath ID: in het xpath veld stel je het xpath in waarmee binnen de metadata de identifier gevonden kan worden. De volgende namespaces zijn bekend: mods, dc, enz.
+Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> UBL metadata synchronization -> Sources. Hier kunnen de bronnen ingesteld worden. Per bron stel je de volgende dingen in:
+* Data Source: waar komt de data vandaan
+   * Retrieval URL: Eerst stel je de OAI-PMH url in. Bij het bewaren wordt meteen duidelijk of de bron valide is.
+   * Set: Eventueel kan hier de naam van een set binnen die bron ingesteld worden.
+   * Metadata prefix: het type metadata dat je wilt ophalen, bijv marc21
+* Data Target: waar gaat de data heen
+   * Datastream ID: Hier stel je in onder welke DSID de metadata bewaard wordt. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
+   * Stylesheet: De metadata die opgehaald is, kan eerst nog worden getransformeerd naar een ander formaat. Hier stel je dat in.
+* Identifier Location: waar is te vinden welke identifier gebruikt moet worden voor synchronisatie
+   * Datastream ID: In het Datastream veld stel je de DSID van de metadata die de identifier bevat in. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
+   * XPath ID: in het xpath veld stel je het xpath in waarmee binnen de metadata de identifier gevonden kan worden. De volgende namespaces zijn bekend: mods, dc, enz.
+   * Prefix ID: aangezien het voor kan komen dat de metadata wel een identifier bevat, maar deze niet binnen OAI-PMH gebruikt kan worden vanwege het missen van de nodig prefix, kan een standaard identifier prefix ingesteld worden. Zie synchroniseren met drush voor mappings van identifiers.
+
 
 Na het instellen van 1 of meerdere bronnen druk je op "Save configuration". Je kan meteen zien of de instellingen goed zijn.
 
@@ -26,7 +33,7 @@ Ook kan je zonder dat er metadata is met een identifier de metadata overhalen vo
 
 ## Synchroniseren meerdere records
 
-In het admin scherm (Islandora -> Islandora Utility Modules -> UBL metadata syncrhonization) kan je alle records synchroniseren. Vul de datum in vanaf wanneer je de metadata wilt gaan synchroniseren in het veld "Last synchronization date" (dit veld bevat de datum van de laatse succesvolle synchronisatie) en druk op knop "Start synchronization". Als de synchronisatie succesvol verloopt wordt dit gemeld en verandert de datum in het veld Last synchronization date" naar de datum van het meest recent gewijzigde metadata record.
+In het admin scherm (Islandora -> Islandora Utility Modules -> UBL metadata synchronization -> Start synchronization) kan je alle records synchroniseren. Vul de datum in vanaf wanneer je de metadata wilt gaan synchroniseren in het veld "Last synchronization date" (dit veld bevat de datum van de laatste succesvolle synchronisatie) en druk op knop "Start synchronization". Als de synchronisatie succesvol verloopt wordt dit gemeld en verandert de datum in het veld Last synchronization date" naar de datum van het meest recent gewijzigde metadata record.
 
 ## Synchroniseren met drush
 
