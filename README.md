@@ -5,7 +5,7 @@
 
 ubl_metadata_synchronization is een Islandora solution pack waarmee de metadata van een Islandora record gesynchroniseerd kan worden met een externe bron. Deze externe bron moet het OAI-PMH protocol ondersteunen. De externe bron is de aanleverende partij voor de metadata van het betreffende record.
 Een islandora record wordt gesynchroniseerd als de metadata een identifier bevat die bruikbaar is door de bron. Deze identifier kan in de MODS metadata of Dublin Core metadata staan, of in andere metadata die bij het record hoort.
-Tot drie soorten bronnen kunnen gedefinieerd worden die bruikbaar zijn om mee te synchroniseren. Binnen de metadata kan de identifier gevonden worden. Deze plek kan per bron verschillend zijn. Dit is in te stellen in de configuratie van deze module.
+Er kunnen meerdere bronnen gedefinieerd worden die bruikbaar zijn om mee te synchroniseren. Binnen de metadata kan de identifier gevonden worden. Deze plek kan per bron verschillend zijn. Dit is in te stellen in de configuratie van deze module.
 Records met een valide identifier kunnen automatisch en in batch gesynchroniseerd worden, zodat de metadata altijd up to date is. Ook is het mogelijk om een individueel record te synchroniseren, zelfs als er nog geen identifier binnen de metadata beschikbaar is.
 
 ## Instellingen
