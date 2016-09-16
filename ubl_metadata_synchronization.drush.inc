@@ -96,17 +96,24 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     $mapping = array("_pattern" => $mappat, "_replacement" => $maprep);
   }
   else if ($mapfile != null) {
-    $fieldseperator = "\t";
+    $fieldseparator = "";
     $mapping = array();
     $content = file_get_contents($mapfile);
     $contentarray = str_getcsv($content,"\n"); 
     foreach ($contentarray as $index => $line) {
       if (strlen($line) > 0) {
-        $comps = str_getcsv($line,$fieldseperator);
-        if (count($comps) != 2) {
-          $fieldseperator = ",";
-          $comps = str_getcsv($line,$fieldseperator);
+        if ($fieldseparator === "") {
+          $fieldseparator = "\t";
+          $comps = str_getcsv($line,$fieldseparator);
+          if (count($comps) > 1) {
+            $fieldseparator = ",";
+            $comps = str_getcsv($line,$fieldseparator);
+          }
+          if (count($comps) > 1) {
+            $fieldseparator = ";";
+          }
         }
+        $comps = str_getcsv($line,$fieldseparator);
         if (count($comps) != 2) {
           $linenumber = $index + 1;
           return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: not 2 components");
@@ -143,10 +150,42 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   else {
     $sources = ubl_metadata_synchronization_sources($sourceid);
     $idsstr = file_get_contents($idsfile);
+    $fieldseparator = "";
     $ids = str_getcsv($idsstr,"\n");
     foreach ($ids as $index => $id) {
       if (strlen($id) == 0) {
         continue;
+      }
+      if ($fieldseparator === "") {
+        $fieldseparator = "\t";
+        $comps = str_getcsv($id,$fieldseparator);
+        if (count($comps) > 1) {
+          // fields are separated by a tab
+        }
+        else {
+          $fieldseparator = ",";
+          $comps = str_getcsv($id,$fieldseparator);
+          if (count($comps) > 1) {
+            // fields are separated by a comma
+          }
+          else {
+            $fieldseparator = ";";
+            $comps = str_getcsv($id,$fieldseparator);
+            if (count($comps) > 1) {
+              // fields are separated by a semicolon
+            }
+            else {
+              // fields are not separated
+              $fieldseparator = FALSE;
+            }
+          }
+        }
+      }
+      if ($fieldseparator !== FALSE) {
+         $comps = str_getcsv($id,$fieldseparator);
+         if (count($comps) > 1) {
+           $id = $comps[0];
+         } 
       }
       $object = find_fedora_object_for_id($id);
       if ($object) {
