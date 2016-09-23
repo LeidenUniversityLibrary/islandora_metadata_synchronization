@@ -1,9 +1,10 @@
-<?PHP
+<?php
 
 /**
  * @file
- * Makes and deletes required dir
+ * Install, update and uninstall functions for the ubl_metadata_synchronization module.
  */
+
 
 /**
  * Implements hook_install().

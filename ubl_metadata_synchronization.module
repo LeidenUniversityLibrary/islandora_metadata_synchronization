@@ -3,13 +3,11 @@
 /**
  * @file
  * ubl_metadata_synchronization
- *
  */
 
 /**
  * Implements hook_menu().
  */
-
 function ubl_metadata_synchronization_menu() {
   $items = array();
 
@@ -66,7 +64,6 @@ function ubl_metadata_synchronization_menu() {
 /**
  * Implements hook_permission().
  */
-
 function ubl_metadata_synchronization_permission() {
   return array(
     'ubl metadata synchronization start' => array(
@@ -83,4 +80,3 @@ function ubl_metadata_synchronization_permission() {
     ),
   );
 }
-

@@ -145,4 +145,3 @@ function ubl_metadata_synchronizatio_stylesheet_upload($form, $form_state) {
     ));
   }
 }
-

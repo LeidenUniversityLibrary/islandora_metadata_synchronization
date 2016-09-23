@@ -1,9 +1,13 @@
 <?php
 
 /**
-* Implements hook_drush_command().
-**/
+ * @file
+ * Functions for synchronization via drush.
+ */
 
+/**
+ * Implements hook_drush_command().
+ */
 function ubl_metadata_synchronization_drush_command() {
   $items['start_metadata_synchronization'] = array(
     'description' => 'Retrieve the metadata that was changed after a specified date from the specified source and synchronize it with the found records in Islandora.',
@@ -29,13 +33,12 @@ function ubl_metadata_synchronization_drush_command() {
 }
 
 /**
-* Implements drush_hook_COMMAND_validate().
-**/
-
+ * Implements drush_hook_COMMAND_validate().
+ */
 function drush_ubl_metadata_synchronization_start_metadata_synchronization_validate() {
   $sourceid = drush_get_option('source');
 
-  if ($sourceid != null) {
+  if ($sourceid != NULL) {
     if (preg_match("/^\d+$/", $sourceid) != 1) {
       return drush_set_error("the option source should be a number indicating the source id as configured in islandora/tools/ubl_metadata_synchronization.");
     }
@@ -43,32 +46,32 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
 
   $date = drush_get_option('date');
   $idsfile = drush_get_option('ids_file');
-  if (($date != null && $idsfile != null) || ($date == null && $idsfile == null)) {
+  if (($date != NULL && $idsfile != NULL) || ($date == NULL && $idsfile == NULL)) {
     return drush_set_error("either option date or option ids_file should exist, not neither and not both");
   }
-  if ($date != null && preg_match("/^(?:last|\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d:\d\dZ)?)$/",$date) != 1) {
+  if ($date != NULL && preg_match("/^(?:last|\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d:\d\dZ)?)$/", $date) != 1) {
     return drush_set_error("the option date is mandatory and should be the value 'last' or a date formatted as YYYY-MM-DD");
-  } 
+  }
 
   $mappat = drush_get_option('mapping_pattern');
   $maprep = drush_get_option('mapping_replacement');
-  if (($mappat == null && $maprep != null) || ($mappat != null && $maprep == null)) {
+  if (($mappat == NULL && $maprep != NULL) || ($mappat != NULL && $maprep == NULL)) {
     return drush_set_error("The options mapping_pattern and mapping_replacement should be used together, or not at all.");
   }
-  if ($mappat != null && @preg_match($mappat,"check if pattern is valid regex") === false) {
+  if ($mappat != NULL && @preg_match($mappat, "check if pattern is valid regex") === FALSE) {
     return drush_set_error("The pattern '$mappat' is not a valid regular expression");
   }
   $mapfile = drush_get_option('mapping_file');
-  if ($mapfile != null) {
-    if ($mappat != null) {
+  if ($mapfile != NULL) {
+    if ($mappat != NULL) {
       return drush_set_error("mapping_file cannot be used at the same time as mapping_pattern");
     }
-    if ( ! file_exists($mapfile)) {
+    if (!file_exists($mapfile)) {
       return drush_set_error("mapping_file '$mapfile' does not exist");
     }
   }
-  if ($idsfile != null) {
-    if ( ! file_exists($idsfile)) {
+  if ($idsfile != NULL) {
+    if (!file_exists($idsfile)) {
       return drush_set_error("ids_file '$idsfile' does not exist");
     }
   }
@@ -77,12 +80,11 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
 }
 
 /**
-* Implements drush_hook_COMMAND().
-**/
-
+ * Implements drush_hook_COMMAND().
+ */
 function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
-  module_load_include('inc','ubl_metadata_synchronization','includes/synchronize');
-  module_load_include('inc','ubl_metadata_synchronization','includes/objects_identifiers');
+  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/synchronize');
+  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/objects_identifiers');
 
   $sourceid = drush_get_option('source');
   $date = drush_get_option('date');
@@ -91,29 +93,29 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   $mapfile = drush_get_option('mapping_file');
   $idsfile = drush_get_option('ids_file');
 
-  $mapping = null;
-  if ($mappat != null && $maprep != null) {
+  $mapping = NULL;
+  if ($mappat != NULL && $maprep != NULL) {
     $mapping = array("_pattern" => $mappat, "_replacement" => $maprep);
   }
-  else if ($mapfile != null) {
+  elseif ($mapfile != NULL) {
     $fieldseparator = "";
     $mapping = array();
     $content = file_get_contents($mapfile);
-    $contentarray = str_getcsv($content,"\n"); 
+    $contentarray = str_getcsv($content, "\n");
     foreach ($contentarray as $index => $line) {
       if (strlen($line) > 0) {
         if ($fieldseparator === "") {
           $fieldseparator = "\t";
-          $comps = str_getcsv($line,$fieldseparator);
+          $comps = str_getcsv($line, $fieldseparator);
           if (count($comps) > 1) {
             $fieldseparator = ",";
-            $comps = str_getcsv($line,$fieldseparator);
+            $comps = str_getcsv($line, $fieldseparator);
           }
           if (count($comps) > 1) {
             $fieldseparator = ";";
           }
         }
-        $comps = str_getcsv($line,$fieldseparator);
+        $comps = str_getcsv($line, $fieldseparator);
         if (count($comps) != 2) {
           $linenumber = $index + 1;
           return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: not 2 components");
@@ -133,59 +135,59 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     $date = variable_get('ubl_metadata_synchronization_last_synchronization_date');
     drush_log("Synchronizing from date $date");
   }
-  
-  if ($idsfile == null) {
+
+  if ($idsfile == NULL) {
     $params = array('date' => $date);
-    if ($sourceid == null) {
-      ubl_metadata_synchronization_start_sync($params,true,$mapping);
+    if ($sourceid == NULL) {
+      ubl_metadata_synchronization_start_sync($params, TRUE, $mapping);
     }
     else {
-       $oaipmh_url = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_oaipmh_url');
-       $params['set'] = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_set');
-       $params['mdxsl'] = variable_get('ubl_metadata_synchronization_source'.$sourceid.'_mdxsl');
+      $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_oaipmh_url');
+      $params['set'] = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_set');
+      $params['mdxsl'] = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_mdxsl');
 
-      ubl_metadata_synchronization_start_sync_with_url($oaipmh_url,$params,true,$mapping);
+      ubl_metadata_synchronization_start_sync_with_url($oaipmh_url, $params, TRUE, $mapping);
     }
   }
   else {
     $sources = ubl_metadata_synchronization_sources($sourceid);
     $idsstr = file_get_contents($idsfile);
     $fieldseparator = "";
-    $ids = str_getcsv($idsstr,"\n");
+    $ids = str_getcsv($idsstr, "\n");
     foreach ($ids as $index => $id) {
       if (strlen($id) == 0) {
         continue;
       }
       if ($fieldseparator === "") {
         $fieldseparator = "\t";
-        $comps = str_getcsv($id,$fieldseparator);
+        $comps = str_getcsv($id, $fieldseparator);
         if (count($comps) > 1) {
-          // fields are separated by a tab
+          // Fields are separated by a tab.
         }
         else {
           $fieldseparator = ",";
-          $comps = str_getcsv($id,$fieldseparator);
+          $comps = str_getcsv($id, $fieldseparator);
           if (count($comps) > 1) {
-            // fields are separated by a comma
+            // Fields are separated by a comma.
           }
           else {
             $fieldseparator = ";";
-            $comps = str_getcsv($id,$fieldseparator);
+            $comps = str_getcsv($id, $fieldseparator);
             if (count($comps) > 1) {
-              // fields are separated by a semicolon
+              // Fields are separated by a semicolon.
             }
             else {
-              // fields are not separated
+              // Fields are not separated.
               $fieldseparator = FALSE;
             }
           }
         }
       }
       if ($fieldseparator !== FALSE) {
-         $comps = str_getcsv($id,$fieldseparator);
-         if (count($comps) > 1) {
-           $id = $comps[0];
-         } 
+        $comps = str_getcsv($id, $fieldseparator);
+        if (count($comps) > 1) {
+          $id = $comps[0];
+        }
       }
       $object = find_fedora_object_for_id($id);
       if ($object) {
@@ -200,48 +202,47 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           if (isset($idprefix)) {
             if (strlen($id) < strlen($idprefix)) {
               $id = $idprefix . $id;
-            } 
+            }
           }
           $mdxsl = $source['mdxsl'];
           $mdprefix = $source['mdprefix'];
           $dsid = $source['target_dsid'];
 
-          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$id,$mdprefix,$mdxsl,$dsid);
+          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $id, $mdprefix, $mdxsl, $dsid);
           if ($t) {
-            $anId = ubl_metadata_synchronization_map_identifier($id,$mapping);
-            if ($id !== $anId) {
-              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$mdprefix,$mdxsl,$dsid);
+            $an_id = ubl_metadata_synchronization_map_identifier($id, $mapping);
+            if ($id !== $an_id) {
+              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
             }
           }
           if ($t) {
             $dsid = $source['id_dsid'];
             $xpath = $source['path'];
-            $anId = ubl_metadata_synchronization_get_identifier($object,$dsid,$xpath);
-            if ($anId != null) {
-              if ($id !== $anId) {
-                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anId,$mdprefix,$mdxsl,$dsid);
+            $an_id = ubl_metadata_synchronization_get_identifier($object, $dsid, $xpath);
+            if ($an_id != NULL) {
+              if ($id !== $an_id) {
+                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
                 if ($t) {
-                  $anotherId = ubl_metadata_synchronization_map_identifier($anId,$mapping);
-                  if ($anId !== $anotherId) {
-                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object,$oaiurl,$anotherId,$mdprefix,$mdxsl,$dsid);
+                  $another_id = ubl_metadata_synchronization_map_identifier($an_id, $mapping);
+                  if ($an_id !== $another_id) {
+                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $another_id, $mdprefix, $mdxsl, $dsid);
                   }
                 }
               }
             }
           }
           if ($t) {
-            drush_log("Cannot synchronize object $id: $t", "warning"); 
+            drush_log("Cannot synchronize object $id: $t", "warning");
           }
           else {
-            drush_log("Successfully synchronized object $id","ok");
+            drush_log("Successfully synchronized object $id", "ok");
             break;
           }
         }
       }
       else {
-        drush_log("Cannot find object $id", "warning"); 
+        drush_log("Cannot find object $id", "warning");
       }
     }
   }
 }
-
