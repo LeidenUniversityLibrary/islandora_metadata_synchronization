@@ -18,6 +18,7 @@ function ubl_metadata_synchronization_drush_command() {
       'mapping_replacement' => 'Optional, but use in conjunction with mapping_pattern. Use this to make another mapping for the OAI identifier',
       'mapping_file' => 'Optional, a file containing a mapping for the identifiers. Each line contains 2 identifiers separated by a tab. The first identifier is the one that is used in the source, the second is the one that is used in islandora.',
       'ids_file' => 'Optional, a file containing a list of identifiers. Only those identifiers will be synchronised. The mapping are tried on those identifiers as well and if they fail, the identifier from the metadata is used with the mapping.',
+      'batch_set_id' => 'Optional, a batch set id of a set that was previously ingested succesfully. Only those records will be synchronised.',
     ),
     'aliases' => array('smds'),
     'examples' => array(
@@ -27,6 +28,8 @@ function ubl_metadata_synchronization_drush_command() {
       'drush smds --source=2 --date=2015-12-15 --mapping_file=/tmp/mapping_file.txt',
       'drush smds --source=2 --ids_file=/tmp/ids_file.txt',
       'drush smds --source=2 --ids_file=/tmp/ids_file.txt --mapping_file=/tmp/mapping_file.txt',
+      'drush smds --source=2 --batch_set_id=6',
+      'drush smds --source=2 --batch_set_id=6 --mapping_file=/tmp/mapping_file.txt',
     ),
   );
   return $items;
@@ -46,11 +49,19 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
 
   $date = drush_get_option('date');
   $idsfile = drush_get_option('ids_file');
-  if (($date != NULL && $idsfile != NULL) || ($date == NULL && $idsfile == NULL)) {
-    return drush_set_error("either option date or option ids_file should exist, not neither and not both");
+  $batchsetid = drush_get_option('batch_set_id');
+  $checkset = array();
+  if ($date !== NULL) { $checkset['date'] = $date; }
+  if ($idsfile !== NULL) { $checkset['idsfile'] = $idsfile; }
+  if ($batchsetid !== NULL) { $checkset['batchsetid'] = $batchsetid; }
+  if (count($checkset) != 1) {
+    return drush_set_error("Exactly one of the options date, ids_file of batch_set_id should exist.");
   }
   if ($date != NULL && preg_match("/^(?:last|\d\d\d\d-\d\d-\d\d(?:T\d\d:\d\d:\d\dZ)?)$/", $date) != 1) {
-    return drush_set_error("the option date is mandatory and should be the value 'last' or a date formatted as YYYY-MM-DD");
+    return drush_set_error("the option date should be the value 'last' or a date formatted as YYYY-MM-DD");
+  }
+  if ($batchsetid != NULL && preg_match("/^\d+$/", $batchsetid) != 1) {
+    return drush_set_error("the option batch_set_id should be a number");
   }
 
   $mappat = drush_get_option('mapping_pattern');
@@ -75,6 +86,13 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
       return drush_set_error("ids_file '$idsfile' does not exist");
     }
   }
+  if ($batchsetid != NULL) {
+    module_load_include('inc', 'islandora_batch', 'includes/db');
+    $count = islandora_batch_get_count_of_queued_set_objects($batchsetid);
+    if ($count == 0) {
+      return drush_set_error("batch set id '$batchsetid' does not contain any items");
+    }
+  }
 
   return TRUE;
 }
@@ -92,6 +110,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   $maprep = drush_get_option('mapping_replacement');
   $mapfile = drush_get_option('mapping_file');
   $idsfile = drush_get_option('ids_file');
+  $batchsetid = drush_get_option('batch_set_id');
 
   $mapping = NULL;
   if ($mappat != NULL && $maprep != NULL) {
@@ -136,7 +155,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     drush_log("Synchronizing from date $date");
   }
 
-  if ($idsfile == NULL) {
+  if ($date !== NULL) {
     $params = array('date' => $date);
     if ($sourceid == NULL) {
       ubl_metadata_synchronization_start_sync($params, TRUE, $mapping);
@@ -151,44 +170,15 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   }
   else {
     $sources = ubl_metadata_synchronization_sources($sourceid);
-    $idsstr = file_get_contents($idsfile);
-    $fieldseparator = "";
-    $ids = str_getcsv($idsstr, "\n");
-    foreach ($ids as $index => $id) {
-      if (strlen($id) == 0) {
-        continue;
-      }
-      if ($fieldseparator === "") {
-        $fieldseparator = "\t";
-        $comps = str_getcsv($id, $fieldseparator);
-        if (count($comps) > 1) {
-          // Fields are separated by a tab.
-        }
-        else {
-          $fieldseparator = ",";
-          $comps = str_getcsv($id, $fieldseparator);
-          if (count($comps) > 1) {
-            // Fields are separated by a comma.
-          }
-          else {
-            $fieldseparator = ";";
-            $comps = str_getcsv($id, $fieldseparator);
-            if (count($comps) > 1) {
-              // Fields are separated by a semicolon.
-            }
-            else {
-              // Fields are not separated.
-              $fieldseparator = FALSE;
-            }
-          }
-        }
-      }
-      if ($fieldseparator !== FALSE) {
-        $comps = str_getcsv($id, $fieldseparator);
-        if (count($comps) > 1) {
-          $id = $comps[0];
-        }
-      }
+    $foundids = array();
+
+    if ($idsfile !== NULL) {
+      $foundids = ids_from_file($idsfile);
+    }
+    elseif ($batchsetid !== NULL) {
+      $foundids = islandora_batch_get_queued_items_for_set($batchsetid); 
+    }
+    foreach ($foundids as $id) {
       $object = find_fedora_object_for_id($id);
       if ($object) {
         $usedoaiurls = array();
@@ -245,4 +235,50 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
       }
     }
   }
+}
+
+function ids_from_file($idsfile) {
+  $foundids = array();
+
+  $idsstr = file_get_contents($idsfile);
+  $fieldseparator = "";
+  $ids = str_getcsv($idsstr, "\n");
+  foreach ($ids as $index => $id) {
+    if (strlen($id) == 0) {
+      continue;
+    }
+    if ($fieldseparator === "") {
+      $fieldseparator = "\t";
+      $comps = str_getcsv($id, $fieldseparator);
+      if (count($comps) > 1) {
+        // Fields are separated by a tab.
+      }
+      else {
+        $fieldseparator = ",";
+        $comps = str_getcsv($id, $fieldseparator);
+        if (count($comps) > 1) {
+          // Fields are separated by a comma.
+        }
+        else {
+          $fieldseparator = ";";
+          $comps = str_getcsv($id, $fieldseparator);
+          if (count($comps) > 1) {
+            // Fields are separated by a semicolon.
+          }
+          else {
+            // Fields are not separated.
+            $fieldseparator = FALSE;
+          }
+        }
+      }
+    }
+    if ($fieldseparator !== FALSE) {
+      $comps = str_getcsv($id, $fieldseparator);
+      if (count($comps) > 1) {
+        $id = $comps[0];
+      }
+    }
+    $foundsids[] = $id;
+  }
+  return $foundids;
 }
