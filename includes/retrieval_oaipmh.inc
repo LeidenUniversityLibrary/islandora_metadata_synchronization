@@ -22,6 +22,15 @@ function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl, $syn
     return FALSE;
   }
 
+  $domdoc = new DOMDocument();
+  if ($domdoc->loadXML($data)) {
+    $domxpath = ubl_metadata_synchronization_new_xpath($domdoc);
+    $domnodelist = $domxpath->query('/oai:OAI-PMH/oai:error');
+    if ($domnodelist->length == 1) {
+      return FALSE;
+    }
+  }  
+
   return $data;
 }
 
