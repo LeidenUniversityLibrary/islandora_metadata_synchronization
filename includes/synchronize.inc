@@ -11,7 +11,6 @@
  */
 function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS') {
   module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
-
   $oaimdxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url, $syncid, $mdprefix);
 
   if (!$oaimdxml) {
@@ -51,6 +50,12 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
     }
 
     ubl_metadata_synchronization_save_xml($object, $dcxml, 'DC', 'DC Record');
+  }
+
+  if ($ischanged) {
+    if (module_exists('rules')) {
+      rules_invoke_event('ubl_metadata_synchronization_object_synchronized', $object);
+    }
   }
 
   return FALSE;
@@ -410,6 +415,9 @@ function ubl_metadata_synchronization_almost_ready() {
  */
 function ubl_metadata_synchronization_finished($success, $results, $operations) {
   // Finished.
+  if (module_exists('rules')) {
+    rules_invoke_event('ubl_metadata_synchronization_selective_objects_synchronized');
+  }
 }
 
 /**
