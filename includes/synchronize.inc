@@ -23,7 +23,15 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
     );
   }
 
-  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl);
+  $parameters = array();
+  if ($dsid === 'MODS') {
+    // Keep the handle that is stored in the MODS datastream.
+    $handle = ubl_metadata_synchronization_get_handle($object);
+    if ($handle) {
+      $parameters['handle'] = $handle;
+    }
+  }
+  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl,$parameters);
 
   if (!$xml) {
     return t("Could not create @dsid for object @objid with sync id @syncid",
@@ -87,13 +95,17 @@ function ubl_metadata_synchronization_save_xml(AbstractObject $object, $xml, $ds
 /**
  * Transform XML as a string by using XSL as a file.
  */
-function ubl_metadata_synchronization_xsl_transform($xml, $xslfile) {
+function ubl_metadata_synchronization_xsl_transform($xml, $xslfile, $parameters = array()) {
   $xsl = new DOMDocument();
   $xsl->load($xslfile);
   $input = new DOMDocument();
   $input->loadXML($xml);
   $processor = new XSLTProcessor();
   $processor->importStylesheet($xsl);
+
+  foreach ($parameters as $parkey => $parvalue) {
+    $processor->setParameter('',$parkey,$parvalue);
+  }
 
   // XXX: Suppressing warnings regarding unregistered prefixes.
   return trim(@$processor->transformToXML($input));
@@ -456,4 +468,31 @@ function find_fedora_object_for_id($id) {
   }
 
   return FALSE;
+}
+
+/**
+ * Retrieve the handle for this object.
+ */
+function ubl_metadata_synchronization_get_handle($object) {
+  $handle = FALSE;
+  if (isset($object['MODS'])) {
+    $xpath = "/mods:mods/mods:identifier[@type='hdl']";
+    $content = $object['MODS']->content;
+    $domdoc = new DOMDocument();
+    if ($domdoc->loadXML($content)) {
+      $domxpath = new DOMXPath($domdoc);
+      $domxpath->registerNamespace('mods', 'http://www.loc.gov/mods/v3');
+      $domnodelist = $domxpath->query($xpath);
+      if ($domnodelist->length > 0) {
+        foreach ($domnodelist as $domnode) {
+          $text = $domnode->textContent;
+          if (isset($text) && strlen($text) > 0) {
+            $handle = $text;
+            break;
+          }
+        }
+      }
+    }
+  }
+  return $handle;
 }

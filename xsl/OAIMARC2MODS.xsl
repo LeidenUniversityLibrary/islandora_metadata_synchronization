@@ -114,7 +114,7 @@ Revision 1.03 - Additional Changes not related to MODS Version 2.0 by ntra
 Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 	-->
 
-
+       <xsl:param name="handle"/>
        <xsl:variable name="oaiid" select="//oai:identifier"/>
 
 
@@ -134,6 +134,14 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 					<xsl:for-each select="//marc:record">
 						<xsl:call-template name="marcRecord"/>
 					</xsl:for-each>
+                                        <xsl:if test="$handle">
+                                          <xsl:if test="not(starts-with(//marc:datafield[@tag='856']/marc:subfield[@code='u'],'urn:hdl') or starts-with(//marc:datafield[@tag='856']/marc:subfield[@code='u'],'hdl') or starts-with(//marc:datafield[@tag='856']/marc:subfield[@code='u'],'http://hdl.loc.gov'))">
+                                            <identifier>
+                                              <xsl:attribute name="type"><xsl:value-of select="'hdl'"/></xsl:attribute>
+                                              <xsl:value-of select="$handle"/>
+                                            </identifier>
+                                          </xsl:if>
+                                        </xsl:if>
 				</mods>
 			</xsl:otherwise>
 		</xsl:choose>
