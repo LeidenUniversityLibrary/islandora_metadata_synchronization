@@ -176,9 +176,16 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
   preg_match('/^syncid_(\d+)$/', $clickedname, $matches);
   $sourceurlnr = $matches[1] ?: 0;
   $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_oaipmh_url');
+  $idprefix = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_id_prefix');
   $mdprefix = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_mdprefix');
   $mdxsl = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_mdxsl');
   $dsid = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_target_dsid');
+
+  if (isset($idprefix) && strlen($idprefix) > 0) {
+    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+      $syncid = $idprefix . $syncid;
+    }
+  }
 
   $result = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid);
 
@@ -208,8 +215,8 @@ function sync_id_editor_form_synchronize_submit(array $form, array &$form_state)
 
   $syncid = ubl_metadata_synchronization_get_identifier($object, $iddsid, $path);
 
-  if (isset($idprefix)) {
-    if (strlen($syncid) < strlen($idprefix)) {
+  if (isset($idprefix) && strlen($idprefix) > 0) {
+    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
       $syncid = $idprefix . $syncid;
     }
   }

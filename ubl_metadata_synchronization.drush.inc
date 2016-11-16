@@ -189,16 +189,17 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           }
           $usedoaiurls[$oaiurl] = 1;
           $idprefix = $source['id_prefix'];
-          if (isset($idprefix)) {
-            if (strlen($id) < strlen($idprefix)) {
-              $id = $idprefix . $id;
+          $syncid = $id;
+          if (isset($idprefix) && strlen($idprefix) > 0) {
+            if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+              $syncid = $idprefix . $syncid;
             }
           }
           $mdxsl = $source['mdxsl'];
           $mdprefix = $source['mdprefix'];
           $dsid = $source['target_dsid'];
 
-          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $id, $mdprefix, $mdxsl, $dsid);
+          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
           if ($t) {
             $an_id = ubl_metadata_synchronization_map_identifier($id, $mapping);
             if ($id !== $an_id) {
@@ -214,8 +215,14 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
                 $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
                 if ($t) {
                   $another_id = ubl_metadata_synchronization_map_identifier($an_id, $mapping);
-                  if ($an_id !== $another_id) {
-                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $another_id, $mdprefix, $mdxsl, $dsid);
+                  $syncid = $another_id;
+                  if (isset($idprefix) && strlen($idprefix) > 0) {
+                    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+                      $syncid = $idprefix . $syncid;
+                    }
+                  }
+                  if ($an_id !== $syncid) {
+                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
                   }
                 }
               }
