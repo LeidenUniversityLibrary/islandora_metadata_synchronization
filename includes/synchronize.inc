@@ -435,13 +435,30 @@ function ubl_metadata_synchronization_finished($success, $results, $operations) 
 /**
  * Retrieve an object for a specific id.
  */
-function find_fedora_object_for_id($id) {
+function find_fedora_object_for_id($identifier) {
+  module_load_include('inc', 'islandora', 'includes/utilities');
   module_load_include('inc', 'islandora_solr_search', 'includes/query_processor');
   module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
-  module_load_include('inc', 'islandora');
 
-  $qp = new IslandoraSolrQueryProcessor();
-  $escapedid = islandora_solr_lesser_escape($id);
+  if (islandora_is_valid_pid($identifier)) {
+    // This looks like a islandora object id.
+
+    $obj = islandora_object_load($identifier);
+
+    if ($obj) {
+      return $obj;
+    }
+  }
+  static $qp = NULL;
+  static $qpc = 0;
+  if (is_null($qp) || $qpc > 10) {
+    // Get a fresh copy the first time and after each 10 queries.
+    // Apparently there are limitations on the amount of queries it can handle.
+    $qp = new IslandoraSolrQueryProcessor();
+    $qpc = 0;
+  }
+  $qpc++;
+  $escapedid = islandora_solr_lesser_escape($identifier);
   $search = "catch_all_fields_mt:$escapedid";
 
   $qp->buildAndExecuteQuery($search);
