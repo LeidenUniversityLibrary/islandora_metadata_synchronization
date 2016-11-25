@@ -182,7 +182,7 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
   $dsid = variable_get('ubl_metadata_synchronization_source' . $sourceurlnr . '_target_dsid');
 
   if (isset($idprefix) && strlen($idprefix) > 0) {
-    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+    if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
       $syncid = $idprefix . $syncid;
     }
   }
@@ -216,7 +216,7 @@ function sync_id_editor_form_synchronize_submit(array $form, array &$form_state)
   $syncid = ubl_metadata_synchronization_get_identifier($object, $iddsid, $path);
 
   if (isset($idprefix) && strlen($idprefix) > 0) {
-    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+    if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
       $syncid = $idprefix . $syncid;
     }
   }

@@ -126,18 +126,18 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
         if ($fieldseparator === "") {
           $fieldseparator = "\t";
           $comps = str_getcsv($line, $fieldseparator);
-          if (count($comps) > 1) {
+          if (count($comps) != 2) {
             $fieldseparator = ",";
             $comps = str_getcsv($line, $fieldseparator);
           }
-          if (count($comps) > 1) {
+          if (count($comps) != 2) {
             $fieldseparator = ";";
           }
         }
         $comps = str_getcsv($line, $fieldseparator);
         if (count($comps) != 2) {
           $linenumber = $index + 1;
-          return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: not 2 components");
+          return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber '$line': not 2 components but ".count($comps)." components");
         }
         $key = $comps[0];
         $value = $comps[1];
@@ -178,9 +178,11 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
     elseif ($batchsetid !== NULL) {
       $foundids = islandora_batch_get_queued_items_for_set($batchsetid); 
     }
+    drush_log("Found " . count($foundids). " IDs to synchronize");
     foreach ($foundids as $id) {
       $object = find_fedora_object_for_id($id);
       if ($object) {
+        drush_log("Synchronizing object " . $object->id . " found for $id");
         $usedoaiurls = array();
         foreach ($sources as $source) {
           $oaiurl = $source['oaipmh_url'];
@@ -191,7 +193,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           $idprefix = $source['id_prefix'];
           $syncid = $id;
           if (isset($idprefix) && strlen($idprefix) > 0) {
-            if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+            if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
               $syncid = $idprefix . $syncid;
             }
           }
@@ -217,7 +219,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
                   $another_id = ubl_metadata_synchronization_map_identifier($an_id, $mapping);
                   $syncid = $another_id;
                   if (isset($idprefix) && strlen($idprefix) > 0) {
-                    if (substr($syncid, 0, strlen($ipprefix)) !== $idprefix) {
+                    if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
                       $syncid = $idprefix . $syncid;
                     }
                   }
@@ -285,7 +287,7 @@ function ids_from_file($idsfile) {
         $id = $comps[0];
       }
     }
-    $foundsids[] = $id;
+    $foundids[] = $id;
   }
   return $foundids;
 }
