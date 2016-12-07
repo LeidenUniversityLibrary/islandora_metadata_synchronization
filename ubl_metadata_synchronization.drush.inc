@@ -205,7 +205,13 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           if ($t) {
             $an_id = ubl_metadata_synchronization_map_identifier($id, $mapping);
             if ($id !== $an_id) {
-              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
+              $syncid = $an_id;
+              if (isset($idprefix) && strlen($idprefix) > 0) {
+                if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
+                  $syncid = $idprefix . $syncid;
+                }
+              }
+              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
             }
           }
           if ($t) {
