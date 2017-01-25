@@ -477,7 +477,7 @@ function find_fedora_object_for_id($identifier) {
     watchdog('ubl_metadata_synchronization',
       'Found more than 1 record (@numFound records) with identifier @id.',
       array(
-        '@id' => $id,
+        '@id' => $identifier,
         '@numFound' => $num_found,
       ),
       WATCHDOG_WARNING
