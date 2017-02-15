@@ -9,7 +9,7 @@
 /**
  * Synchronize the metadata via OAI-PMH for a specific object.
  */
-function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS') {
+function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS', $force = FALSE) {
   module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
   $oaimdxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url, $syncid, $mdprefix);
 
@@ -31,7 +31,7 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
       $parameters['handle'] = $handle;
     }
   }
-  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl,$parameters);
+  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl, $parameters);
 
   if (!$xml) {
     return t("Could not create @dsid for object @objid with sync id @syncid",
@@ -43,7 +43,7 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
     );
   }
 
-  $ischanged = ubl_metadata_synchronization_save_xml($object, $xml, $dsid, "$dsid XML");
+  $ischanged = ubl_metadata_synchronization_save_xml($object, $xml, $dsid, "$dsid XML", $force);
 
   if ($ischanged && ($dsid === 'MODS')) {
     $dcxml = ubl_metadata_synchronization_create_dc_from_mods($xml);
@@ -72,9 +72,9 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
 /**
  * Save XML to the DSID of a specific object, set label of DSID.
  */
-function ubl_metadata_synchronization_save_xml(AbstractObject $object, $xml, $dsid, $label) {
+function ubl_metadata_synchronization_save_xml(AbstractObject $object, $xml, $dsid, $label, $force = FALSE) {
   if (isset($object[$dsid])) {
-    if ($object[$dsid]->content !== $xml) {
+    if ($force || ($object[$dsid]->content !== $xml)) {
       $object[$dsid]->content = $xml;
 
       return TRUE;
@@ -115,9 +115,8 @@ function ubl_metadata_synchronization_xsl_transform($xml, $xslfile, $parameters 
  * Create DC as a string from the MODS XML as a string.
  */
 function ubl_metadata_synchronization_create_dc_from_mods($modsxml) {
-  module_load_include('inc', 'islandora_marcxml', 'includes/utilities');
-
-  $xsl = drupal_get_path('module', 'islandora_batch') . '/transforms/mods_to_dc.xsl';
+  // TODO: use the configured mods_to_dc transformation for this.
+  $xsl = drupal_get_path('module', 'ubl_metadata_synchronization') . '/xsl/mods_to_dc.xsl';
 
   return ubl_metadata_synchronization_xsl_transform($modsxml, $xsl);
 }
