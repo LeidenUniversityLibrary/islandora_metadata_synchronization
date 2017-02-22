@@ -145,7 +145,12 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           $linenumber = $index + 1;
           return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: source id '$key' maps to 2 different target ids");
         }
+        if (isset($mapping[$value]) && $mapping[$value] !== $key) {
+          $linenumber = $index + 1;
+          return drush_set_error("mapping_file '$mapfile' has an error on line $linenumber: target id '$value' maps to 2 different source ids");
+        }
         $mapping[$key] = $value;
+        $mapping[$value] = $key;
       }
     }
   }
