@@ -5544,6 +5544,11 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 
 	<xsl:template name="createAccessConditionFrom540">
 		<accessCondition type="use and reproduction">
+                        <xsl:if test="marc:subfield[@code='u']">
+                            <xsl:attribute name="xlink:href">
+                                <xsl:value-of select="marc:subfield[@code='u']"/>
+                            </xsl:attribute>
+                        </xsl:if>
 			<xsl:call-template name="xxx880"/>
 			<xsl:call-template name="subfieldSelect">
 				<xsl:with-param name="codes">abcde35</xsl:with-param>
