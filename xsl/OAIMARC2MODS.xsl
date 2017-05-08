@@ -5535,9 +5535,10 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 
 	<xsl:template name="createAccessConditionFrom506">
 		<accessCondition type="restriction on access">
-			<xsl:call-template name="xxx880"/>
+		<!--	<xsl:call-template name="xxx880"/> --> 
 			<xsl:call-template name="subfieldSelect">
-				<xsl:with-param name="codes">abcd35</xsl:with-param>
+		<!--		<xsl:with-param name="codes">abcd35</xsl:with-param> -->
+				<xsl:with-param name="codes">a</xsl:with-param>
 			</xsl:call-template>
 		</accessCondition>
 	</xsl:template>
