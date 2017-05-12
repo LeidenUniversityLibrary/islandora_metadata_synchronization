@@ -460,7 +460,7 @@ function find_fedora_object_for_id($identifier) {
   $escapedid = islandora_solr_lesser_escape($identifier);
   $search = "catch_all_fields_mt:$escapedid";
 
-  $qp->buildAndExecuteQuery($search);
+  $qp->buildAndExecuteQuery($search, NULL, FALSE);
 
   $r = $qp->islandoraSolrResult;
 
