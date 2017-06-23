@@ -1,16 +1,16 @@
-# ubl_metadata_synchronization
+# islandora_metadata_synchronization
 ===========================
 
 ## Inleiding
 
-ubl_metadata_synchronization is een Islandora solution pack waarmee de metadata van een Islandora record gesynchroniseerd kan worden met een externe bron. Deze externe bron moet het OAI-PMH protocol ondersteunen. De externe bron is de aanleverende partij voor de metadata van het betreffende record.
+islandora_metadata_synchronization is een Islandora solution pack waarmee de metadata van een Islandora record gesynchroniseerd kan worden met een externe bron. Deze externe bron moet het OAI-PMH protocol ondersteunen. De externe bron is de aanleverende partij voor de metadata van het betreffende record.
 Een islandora record wordt gesynchroniseerd als de metadata een identifier bevat die bruikbaar is door de bron. Deze identifier kan in de MODS metadata of Dublin Core metadata staan, of in andere metadata die bij het record hoort.
 Er kunnen meerdere bronnen gedefinieerd worden die bruikbaar zijn om mee te synchroniseren. Binnen de metadata kan de identifier gevonden worden. Deze plek kan per bron verschillend zijn. Dit is in te stellen in de configuratie van deze module.
 Records met een valide identifier kunnen automatisch en in batch gesynchroniseerd worden, zodat de metadata altijd up to date is. Ook is het mogelijk om een individueel record te synchroniseren, zelfs als er nog geen identifier binnen de metadata beschikbaar is.
 
 ## Instellingen
 
-Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> UBL metadata synchronization -> Sources. Hier kunnen de bronnen ingesteld worden. Per bron stel je de volgende dingen in:
+Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> islandora metadata synchronization -> Sources. Hier kunnen de bronnen ingesteld worden. Per bron stel je de volgende dingen in:
 * Data Source: waar komt de data vandaan
    * Retrieval URL: Eerst stel je de OAI-PMH url in. Bij het bewaren wordt meteen duidelijk of de bron valide is.
    * Set: Eventueel kan hier de naam van een set binnen die bron ingesteld worden.
@@ -33,7 +33,7 @@ Ook kan je zonder dat er metadata is met een identifier de metadata overhalen vo
 
 ## Synchroniseren meerdere records
 
-In het admin scherm (Islandora -> Islandora Utility Modules -> UBL metadata synchronization -> Start synchronization) kan je alle records synchroniseren. Vul de datum in vanaf wanneer je de metadata wilt gaan synchroniseren in het veld "Last synchronization date" (dit veld bevat de datum van de laatste succesvolle synchronisatie) en druk op knop "Start synchronization". Als de synchronisatie succesvol verloopt wordt dit gemeld en verandert de datum in het veld Last synchronization date" naar de datum van het meest recent gewijzigde metadata record.
+In het admin scherm (Islandora -> Islandora Utility Modules -> islandora metadata synchronization -> Start synchronization) kan je alle records synchroniseren. Vul de datum in vanaf wanneer je de metadata wilt gaan synchroniseren in het veld "Last synchronization date" (dit veld bevat de datum van de laatste succesvolle synchronisatie) en druk op knop "Start synchronization". Als de synchronisatie succesvol verloopt wordt dit gemeld en verandert de datum in het veld Last synchronization date" naar de datum van het meest recent gewijzigde metadata record.
 
 ## Synchroniseren met drush
 

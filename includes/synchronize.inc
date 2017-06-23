@@ -9,9 +9,9 @@
 /**
  * Synchronize the metadata via OAI-PMH for a specific object.
  */
-function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS', $force = FALSE) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
-  $oaimdxml = ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url, $syncid, $mdprefix);
+function islandora_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS', $force = FALSE) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
+  $oaimdxml = islandora_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url, $syncid, $mdprefix);
 
   if (!$oaimdxml) {
     return t("No metadata found for object @objid via @url with sync id @syncid",
@@ -26,12 +26,12 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
   $parameters = array();
   if ($dsid === 'MODS') {
     // Keep the handle that is stored in the MODS datastream.
-    $handle = ubl_metadata_synchronization_get_handle($object);
+    $handle = islandora_metadata_synchronization_get_handle($object);
     if ($handle) {
       $parameters['handle'] = $handle;
     }
   }
-  $xml = ubl_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl, $parameters);
+  $xml = islandora_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl, $parameters);
 
   if (!$xml) {
     return t("Could not create @dsid for object @objid with sync id @syncid",
@@ -43,10 +43,10 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
     );
   }
 
-  $ischanged = ubl_metadata_synchronization_save_xml($object, $xml, $dsid, "$dsid XML", $force);
+  $ischanged = islandora_metadata_synchronization_save_xml($object, $xml, $dsid, "$dsid XML", $force);
 
   if ($ischanged && ($dsid === 'MODS')) {
-    $dcxml = ubl_metadata_synchronization_create_dc_from_mods($xml);
+    $dcxml = islandora_metadata_synchronization_create_dc_from_mods($xml);
 
     if (!$dcxml) {
       return t("Could not create DC for object @objid with sync id @syncid",
@@ -57,12 +57,12 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
       );
     }
 
-    ubl_metadata_synchronization_save_xml($object, $dcxml, 'DC', 'DC Record');
+    islandora_metadata_synchronization_save_xml($object, $dcxml, 'DC', 'DC Record');
   }
 
   if ($ischanged) {
     if (module_exists('rules')) {
-      rules_invoke_event('ubl_metadata_synchronization_object_synchronized', $object);
+      rules_invoke_event('islandora_metadata_synchronization_object_synchronized', $object);
     }
   }
 
@@ -72,7 +72,7 @@ function ubl_metadata_synchronization_sync_metadata_for_object_using(AbstractObj
 /**
  * Save XML to the DSID of a specific object, set label of DSID.
  */
-function ubl_metadata_synchronization_save_xml(AbstractObject $object, $xml, $dsid, $label, $force = FALSE) {
+function islandora_metadata_synchronization_save_xml(AbstractObject $object, $xml, $dsid, $label, $force = FALSE) {
   if (isset($object[$dsid])) {
     if ($force || ($object[$dsid]->content !== $xml)) {
       $object[$dsid]->content = $xml;
@@ -95,7 +95,7 @@ function ubl_metadata_synchronization_save_xml(AbstractObject $object, $xml, $ds
 /**
  * Transform XML as a string by using XSL as a file.
  */
-function ubl_metadata_synchronization_xsl_transform($xml, $xslfile, $parameters = array()) {
+function islandora_metadata_synchronization_xsl_transform($xml, $xslfile, $parameters = array()) {
   $xsl = new DOMDocument();
   $xsl->load($xslfile);
   $input = new DOMDocument();
@@ -114,32 +114,32 @@ function ubl_metadata_synchronization_xsl_transform($xml, $xslfile, $parameters 
 /**
  * Create DC as a string from the MODS XML as a string.
  */
-function ubl_metadata_synchronization_create_dc_from_mods($modsxml) {
+function islandora_metadata_synchronization_create_dc_from_mods($modsxml) {
   // TODO: use the configured mods_to_dc transformation for this.
-  $xsl = drupal_get_path('module', 'ubl_metadata_synchronization') . '/xsl/mods_to_dc.xsl';
+  $xsl = drupal_get_path('module', 'islandora_metadata_synchronization') . '/xsl/mods_to_dc.xsl';
 
-  return ubl_metadata_synchronization_xsl_transform($modsxml, $xsl);
+  return islandora_metadata_synchronization_xsl_transform($modsxml, $xsl);
 }
 
 /**
  * Return an array of available sources.
  */
-function ubl_metadata_synchronization_sources($sourceid = NULL) {
+function islandora_metadata_synchronization_sources($sourceid = NULL) {
   $sources = array();
 
   for ($i = 1; $i <= 99; $i++) {
     if (($sourceid != NULL) && ($sourceid != $i)) {
       continue;
     }
-    $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $i . '_oaipmh_url');
+    $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
-      $set = variable_get('ubl_metadata_synchronization_source' . $i . '_set');
-      $mdprefix = variable_get('ubl_metadata_synchronization_source' . $i . '_mdprefix');
-      $idprefix = variable_get('ubl_metadata_synchronization_source' . $i . '_id_prefix');
-      $iddsid = variable_get('ubl_metadata_synchronization_source' . $i . '_id_dsid');
-      $targetdsid = variable_get('ubl_metadata_synchronization_source' . $i . '_target_dsid');
-      $path = variable_get('ubl_metadata_synchronization_source' . $i . '_path');
-      $mdxsl = variable_get('ubl_metadata_synchronization_source' . $i . '_mdxsl');
+      $set = variable_get('islandora_metadata_synchronization_source' . $i . '_set');
+      $mdprefix = variable_get('islandora_metadata_synchronization_source' . $i . '_mdprefix');
+      $idprefix = variable_get('islandora_metadata_synchronization_source' . $i . '_id_prefix');
+      $iddsid = variable_get('islandora_metadata_synchronization_source' . $i . '_id_dsid');
+      $targetdsid = variable_get('islandora_metadata_synchronization_source' . $i . '_target_dsid');
+      $path = variable_get('islandora_metadata_synchronization_source' . $i . '_path');
+      $mdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl');
 
       $sources[$i] = array(
         'oaipmh_url' => $oaipmh_url,
@@ -159,16 +159,16 @@ function ubl_metadata_synchronization_sources($sourceid = NULL) {
 /**
  * Start synchronization using all sources.
  */
-function ubl_metadata_synchronization_start_sync($params, $usingdrush = FALSE, $mapping = NULL) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
+function islandora_metadata_synchronization_start_sync($params, $usingdrush = FALSE, $mapping = NULL) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
 
   $oaiurls = array();
 
   for ($i = 1; $i <= 99; $i++) {
-    $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $i . '_oaipmh_url');
-    $set = variable_get('ubl_metadata_synchronization_source' . $i . '_set');
-    $mdprefix = variable_get('ubl_metadata_synchronization_source' . $i . '_mdprefix');
-    $mdxsl = variable_get('ubl_metadata_synchronization_source' . $i . '_mdxsl');
+    $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
+    $set = variable_get('islandora_metadata_synchronization_source' . $i . '_set');
+    $mdprefix = variable_get('islandora_metadata_synchronization_source' . $i . '_mdprefix');
+    $mdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl');
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
       $key = $oaipmh_url;
       if (isset($set)) {
@@ -179,7 +179,7 @@ function ubl_metadata_synchronization_start_sync($params, $usingdrush = FALSE, $
         $newparams['set'] = $set;
         $newparams['mdprefix'] = $mdprefix;
         $newparams['mdxsl'] = $mdxsl;
-        ubl_metadata_synchronization_start_sync_with_url($oaipmh_url, $newparams, $usingdrush, $mapping);
+        islandora_metadata_synchronization_start_sync_with_url($oaipmh_url, $newparams, $usingdrush, $mapping);
         $oaiurls[$key] = $i;
       }
     }
@@ -208,7 +208,7 @@ function ubl_metadata_synchronization_start_sync($params, $usingdrush = FALSE, $
 /**
  * Start synchronization using a specific source.
  */
-function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $params, $usingdrush = FALSE, $mapping = NULL) {
+function islandora_metadata_synchronization_start_sync_with_url($oaiurl, $params, $usingdrush = FALSE, $mapping = NULL) {
   if ($usingdrush) {
     $setdesc = '';
     if (isset($params["set"]) && strlen($params["set"]) > 0) {
@@ -221,20 +221,20 @@ function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $params, $usi
                 )
               ));
     $cntxt = array();
-    ubl_metadata_synchronization_handle_batch($oaiurl, $params, array(), $usingdrush, $mapping, $cntxt);
+    islandora_metadata_synchronization_handle_batch($oaiurl, $params, array(), $usingdrush, $mapping, $cntxt);
   }
   else {
     $batch = array(
-      'file' => drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc',
+      'file' => drupal_get_path('module', 'islandora_metadata_synchronization') . '/includes/synchronize.inc',
       'operations' => array(
-        array('ubl_metadata_synchronization_handle_batch',
+        array('islandora_metadata_synchronization_handle_batch',
           array($oaiurl, $params, array(), $usingdrush, $mapping),
         ),
-        array('ubl_metadata_synchronization_almost_ready',
+        array('islandora_metadata_synchronization_almost_ready',
           array(),
         ),
       ),
-      'finished' => 'ubl_metadata_synchronization_finished',
+      'finished' => 'islandora_metadata_synchronization_finished',
       'title' => t('Processing'),
       'progress_message' => '',
       'error_message' => t('Synchronization has encountered an error.'),
@@ -249,7 +249,7 @@ function ubl_metadata_synchronization_start_sync_with_url($oaiurl, $params, $usi
 /**
  * Map an identifier to another identifier using the mapping.
  */
-function ubl_metadata_synchronization_map_identifier($an_id, $mapping) {
+function islandora_metadata_synchronization_map_identifier($an_id, $mapping) {
   if ($mapping != NULL) {
     if (isset($mapping['_pattern']) && isset($mapping['_replacement'])) {
       $an_id = preg_replace($mapping['_pattern'], $mapping['_replacement'], $an_id);
@@ -266,10 +266,10 @@ function ubl_metadata_synchronization_map_identifier($an_id, $mapping) {
 /**
  * Handle the batch synchronization of the metadata.
  */
-function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $usingdrush, $mapping, &$context) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
+function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $results, $usingdrush, $mapping, &$context) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
 
-  $oairesult = ubl_metadata_synchronization_identifiers_for_changed_metadata($oaiurl, $params);
+  $oairesult = islandora_metadata_synchronization_identifiers_for_changed_metadata($oaiurl, $params);
 
   if (isset($oairesult['oaierror'])) {
     if (($oairesult['oaierror'] === 'no record match the search criteria') && !isset($oairesult['oaiidscount'])) {
@@ -321,10 +321,10 @@ function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $
   }
   $results['oaiidscount'] += count($oairesult['ids']);
   foreach ($oairesult['ids'] as $an_id) {
-    $an_id = ubl_metadata_synchronization_map_identifier($an_id, $mapping);
+    $an_id = islandora_metadata_synchronization_map_identifier($an_id, $mapping);
     $object = find_fedora_object_for_id($an_id);
     if ($object) {
-      $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
+      $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
       if ($t) {
         $results['syncerrors'][] = $t;
         if ($usingdrush) {
@@ -347,7 +347,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $
   if (isset($oairesult["resumptiontoken"])) {
     $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl);
     if ($usingdrush) {
-      ubl_metadata_synchronization_handle_batch($oaiurl, $newparams, $results, $usingdrush, $mapping, $context);
+      islandora_metadata_synchronization_handle_batch($oaiurl, $newparams, $results, $usingdrush, $mapping, $context);
     }
     else {
       // Add an extra batch to handle the resumption token.
@@ -355,14 +355,14 @@ function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $
       $batch_next_set = $batch['current_set'] + 1;
       $batch_set = &$batch['sets'][$batch_next_set];
 
-      $batch_set['operations'][] = array('ubl_metadata_synchronization_handle_batch',
+      $batch_set['operations'][] = array('islandora_metadata_synchronization_handle_batch',
         array($oaiurl, $newparams, $results, $usingdrush, $mapping),
       );
-      $batch_set['operations'][] = array('ubl_metadata_synchronization_almost_ready',
+      $batch_set['operations'][] = array('islandora_metadata_synchronization_almost_ready',
         array(),
       );
 
-      $batch_set['file'] = drupal_get_path('module', 'ubl_metadata_synchronization') . '/includes/synchronize.inc';
+      $batch_set['file'] = drupal_get_path('module', 'islandora_metadata_synchronization') . '/includes/synchronize.inc';
       $batch_set['total'] = count($batch_set['operations']);
       $batch_set['count'] = $batch_set['total'];
       $batch_set['success'] = FALSE;
@@ -396,7 +396,7 @@ function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $
 
     $date = $results['oairesponsedate'];
     if ($date) {
-      variable_set('ubl_metadata_synchronization_last_synchronization_date', $date);
+      variable_set('islandora_metadata_synchronization_last_synchronization_date', $date);
       $text = t('Successfully synchronized records @syncedcount out of @totalcount, with @errorcount errors',
                 array(
                   '@syncedcount' => $results['syncsuccesses'],
@@ -417,17 +417,17 @@ function ubl_metadata_synchronization_handle_batch($oaiurl, $params, $results, $
 /**
  * Just a "filler" function.
  */
-function ubl_metadata_synchronization_almost_ready() {
+function islandora_metadata_synchronization_almost_ready() {
   // Just a "filler" function.
 }
 
 /**
  * Finish the synchronization.
  */
-function ubl_metadata_synchronization_finished($success, $results, $operations) {
+function islandora_metadata_synchronization_finished($success, $results, $operations) {
   // Finished.
   if (module_exists('rules')) {
-    rules_invoke_event('ubl_metadata_synchronization_selective_objects_synchronized');
+    rules_invoke_event('islandora_metadata_synchronization_selective_objects_synchronized');
   }
 }
 
@@ -473,7 +473,7 @@ function find_fedora_object_for_id($identifier) {
     return $obj;
   }
   if ($num_found > 1) {
-    watchdog('ubl_metadata_synchronization',
+    watchdog('islandora_metadata_synchronization',
       'Found more than 1 record (@numFound records) with identifier @id.',
       array(
         '@id' => $identifier,
@@ -489,7 +489,7 @@ function find_fedora_object_for_id($identifier) {
 /**
  * Retrieve the handle for this object.
  */
-function ubl_metadata_synchronization_get_handle($object) {
+function islandora_metadata_synchronization_get_handle($object) {
   $handle = FALSE;
   if (isset($object['MODS'])) {
     $xpath = "/mods:mods/mods:identifier[@type='hdl']";

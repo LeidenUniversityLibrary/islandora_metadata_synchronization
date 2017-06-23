@@ -15,10 +15,10 @@
  * @return array
  *   An array representing the file management form.
  */
-function ubl_metadata_synchronization_manage_stylesheets_form($form, &$form_state) {
+function islandora_metadata_synchronization_manage_stylesheets_form($form, &$form_state) {
   // Grab all the user uploaded files.
   $xsl_files_struct = array();
-  $upload_path = 'public://ubl_metadata_synchronization_xsls';
+  $upload_path = 'public://islandora_metadata_synchronization_xsls';
   $xsl_current_files = file_scan_directory($upload_path, '/.*\.xslt?$/');
 
   foreach ($xsl_current_files as $up_file) {
@@ -28,13 +28,13 @@ function ubl_metadata_synchronization_manage_stylesheets_form($form, &$form_stat
     );
   }
   ksort($xsl_files_struct);
-  $form['ubl_md_sync_xsl_files'] = array(
+  $form['islandora_md_sync_xsl_files'] = array(
     '#type' => 'fieldset',
     '#title' => t('Files'),
     '#collapsed' => FALSE,
     '#collapsible' => FALSE,
   );
-  $form['ubl_md_sync_xsl_files']['table'] = array(
+  $form['islandora_md_sync_xsl_files']['table'] = array(
     '#type' => 'tableselect',
     '#header' => array(
       t('File name'),
@@ -44,42 +44,42 @@ function ubl_metadata_synchronization_manage_stylesheets_form($form, &$form_stat
     '#empty' => t('No uploaded files!'),
   );
   if (count($xsl_files_struct)) {
-    $form['ubl_md_sync_xsl_files']['remove_selected'] = array(
+    $form['islandora_md_sync_xsl_files']['remove_selected'] = array(
       '#type' => 'submit',
       '#value' => t('Delete selected'),
     );
   }
-  $form['ubl_md_sync_xsl_files']['ubl_md_sync_xsl_upload'] = array(
+  $form['islandora_md_sync_xsl_files']['islandora_md_sync_xsl_upload'] = array(
     '#type' => 'fieldset',
     '#title' => t('Upload'),
     '#collapsible' => FALSE,
     '#collapsed' => FALSE,
   );
-  $form['ubl_md_sync_xsl_files']['ubl_md_sync_xsl_upload']['ubl_md_sync_xsl_upload_xsl'] = array(
+  $form['islandora_md_sync_xsl_files']['islandora_md_sync_xsl_upload']['islandora_md_sync_xsl_upload_xsl'] = array(
     '#type' => 'file',
     '#title' => t('Upload an XSL or XSLT file to be used for transformations'),
-    '#upload_location' => 'public://ubl_metadata_synchronization_xsls',
+    '#upload_location' => 'public://islandora_metadata_synchronization_xsls',
     '#upload_validators' => array(
       'file_validate_extensions' => array('xsl xslt'),
     ),
   );
-  $form['ubl_md_sync_xsl_files']['ubl_md_sync_xsl_upload']['ubl_md_sync_xsl_upload_button'] = array(
+  $form['islandora_md_sync_xsl_files']['islandora_md_sync_xsl_upload']['islandora_md_sync_xsl_upload_button'] = array(
     '#type' => 'submit',
     '#value' => t('Upload'),
-    '#submit' => array('ubl_metadata_synchronizatio_stylesheet_upload'),
+    '#submit' => array('islandora_metadata_synchronizatio_stylesheet_upload'),
   );
   return $form;
 }
 
 /**
- * Validation for the ubl_metadata_synchronization_manage_stylesheets form.
+ * Validation for the islandora_metadata_synchronization_manage_stylesheets form.
  *
  * @param array $form
  *   An array representing a Drupal form.
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function ubl_metadata_synchronization_manage_stylesheets_form_validate($form, $form_state) {
+function islandora_metadata_synchronization_manage_stylesheets_form_validate($form, $form_state) {
   if (end($form_state['triggering_element']['#parents']) == 'remove_selected') {
     $selected = FALSE;
     foreach ($form_state['values']['table'] as $value) {
@@ -94,14 +94,14 @@ function ubl_metadata_synchronization_manage_stylesheets_form_validate($form, $f
   }
 }
 /**
- * Submit handler for the ubl_metadata_synchronization_manage_stylesheets form.
+ * Submit handler for the islandora_metadata_synchronization_manage_stylesheets form.
  *
  * @param array $form
  *   An array representing a Drupal form.
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function ubl_metadata_synchronization_manage_stylesheets_form_submit($form, &$form_state) {
+function islandora_metadata_synchronization_manage_stylesheets_form_submit($form, &$form_state) {
   $deleted_count = 0;
   $fid_or = db_or();
   foreach ($form_state['values']['table'] as $uri => $selected) {
@@ -133,8 +133,8 @@ function ubl_metadata_synchronization_manage_stylesheets_form_submit($form, &$fo
  * @param array $form_state
  *   An array containing the Drupal form state.
  */
-function ubl_metadata_synchronizatio_stylesheet_upload($form, $form_state) {
-  $file = file_save_upload('ubl_md_sync_xsl_upload_xsl', array('file_validate_extensions' => array('xsl xslt')), 'public://ubl_metadata_synchronization_xsls');
+function islandora_metadata_synchronizatio_stylesheet_upload($form, $form_state) {
+  $file = file_save_upload('islandora_md_sync_xsl_upload_xsl', array('file_validate_extensions' => array('xsl xslt')), 'public://islandora_metadata_synchronization_xsls');
   if ($file) {
     $file->status = FILE_STATUS_PERMANENT;
     file_save($file);

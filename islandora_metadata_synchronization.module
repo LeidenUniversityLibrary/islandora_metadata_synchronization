@@ -1,0 +1,98 @@
+<?php
+
+/**
+ * @file
+ * islandora_metadata_synchronization
+ */
+
+/**
+ * Implements hook_menu().
+ */
+function islandora_metadata_synchronization_menu() {
+  $items = array();
+
+  $items['admin/islandora/tools/islandora_metadata_synchronization'] = array(
+    'title' => 'islandora metadata synchronization',
+    'description' => 'Settings for islandora metadata synchronization.',
+    'type' => MENU_NORMAL_ITEM,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_metadata_synchronization_start_sync_form'),
+    'access arguments' => array('islandora metadata synchronization start'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/islandora_metadata_synchronization/start'] = array(
+    'title' => 'Start synchronization',
+    'description' => 'Start islandora metadata synchronization.',
+    'type' => MENU_DEFAULT_LOCAL_TASK,
+    'weight' => -10,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_metadata_synchronization_start_sync_form'),
+    'access arguments' => array('islandora metadata synchronization start'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/islandora_metadata_synchronization/sources'] = array(
+    'title' => 'Sources',
+    'description' => 'Sources for islandora metadata synchronization.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_metadata_synchronization_sources_form'),
+    'access arguments' => array('islandora metadata synchronization sources'),
+    'file' => 'includes/admin.form.inc',
+  );
+  $items['admin/islandora/tools/islandora_metadata_synchronization/stylesheets'] = array(
+    'title' => 'Stylesheets',
+    'description' => 'Manage the stylesheets for islandora metadata synchronization.',
+    'type' => MENU_LOCAL_TASK,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('islandora_metadata_synchronization_manage_stylesheets_form'),
+    'access arguments' => array('islandora metadata synchronization stylesheets'),
+    'file' => 'includes/stylesheets.form.inc',
+  );
+  $items['islandora/object/%islandora_object/manage/syncid'] = array(
+    'title' => 'Synchronize',
+    'type' => MENU_LOCAL_TASK,
+    'weight' => 0,
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('sync_id_editor_form', 2),
+    'access arguments' => array('islandora metadata synchronization syncid'),
+    'file' => 'includes/object.form.inc',
+  );
+
+  return $items;
+}
+
+/**
+ * Implements hook_permission().
+ */
+function islandora_metadata_synchronization_permission() {
+  return array(
+    'islandora metadata synchronization start' => array(
+      'title' => 'Start a batch synchronization from a specific date',
+    ),
+    'islandora metadata synchronization sources' => array(
+      'title' => 'Edit the synchronization source settings',
+    ),
+    'islandora metadata synchronization stylesheets' => array(
+      'title' => 'Manage the stylesheets that are used to transform the metadata',
+    ),
+    'islandora metadata synchronization syncid' => array(
+      'title' => 'Synchronize a single object',
+    ),
+  );
+}
+
+/**
+ * Implements hook_form_FORM_ID_alter().
+ */
+function islandora_metadata_synchronization_form_system_modules_alter(&$form, &$form_state, $form_id) {
+  $form['modules']['Islandora Tools']['islandora_metadata_synchronization']['links']['configure'] = array(
+    '#type' => 'link',
+    '#title' => t('Configure'),
+    '#href' => 'admin/islandora/tools/islandora_metadata_synchronization',
+    '#options' => array('attributes' => array(
+      'class' => array('module-link','module-link-configure'),
+      'title' => t('Settings for islandora metadata synchronization.'),
+    )),
+  );
+}
+

@@ -8,11 +8,11 @@
 /**
  * Implements hook_drush_command().
  */
-function ubl_metadata_synchronization_drush_command() {
+function islandora_metadata_synchronization_drush_command() {
   $items['start_metadata_synchronization'] = array(
     'description' => 'Retrieve the metadata that was changed after a specified date from the specified source and synchronize it with the found records in Islandora.',
     'options' => array(
-      'source' => 'The source id as configured in islandora/tools/ubl_metadata_synchronization.',
+      'source' => 'The source id as configured in islandora/tools/islandora_metadata_synchronization.',
       'date' => 'The date after which the metadata has changed. Format YYYY-MM-DD. Enter \'last\' to use the last synchronization date.',
       'mapping_pattern' => 'Optional, but use in conjunction with mapping_replacement. Use this to make another mapping for the OAI identifier',
       'mapping_replacement' => 'Optional, but use in conjunction with mapping_pattern. Use this to make another mapping for the OAI identifier',
@@ -38,12 +38,12 @@ function ubl_metadata_synchronization_drush_command() {
 /**
  * Implements drush_hook_COMMAND_validate().
  */
-function drush_ubl_metadata_synchronization_start_metadata_synchronization_validate() {
+function drush_islandora_metadata_synchronization_start_metadata_synchronization_validate() {
   $sourceid = drush_get_option('source');
 
   if ($sourceid != NULL) {
     if (preg_match("/^\d+$/", $sourceid) != 1) {
-      return drush_set_error("the option source should be a number indicating the source id as configured in islandora/tools/ubl_metadata_synchronization.");
+      return drush_set_error("the option source should be a number indicating the source id as configured in islandora/tools/islandora_metadata_synchronization.");
     }
   }
 
@@ -100,9 +100,9 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization_valid
 /**
  * Implements drush_hook_COMMAND().
  */
-function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/synchronize');
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/objects_identifiers');
+function drush_islandora_metadata_synchronization_start_metadata_synchronization() {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/synchronize');
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/objects_identifiers');
 
   $sourceid = drush_get_option('source');
   $date = drush_get_option('date');
@@ -156,25 +156,25 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
   }
 
   if ($date === 'last') {
-    $date = variable_get('ubl_metadata_synchronization_last_synchronization_date');
+    $date = variable_get('islandora_metadata_synchronization_last_synchronization_date');
     drush_log("Synchronizing from date $date");
   }
 
   if ($date !== NULL) {
     $params = array('date' => $date);
     if ($sourceid == NULL) {
-      ubl_metadata_synchronization_start_sync($params, TRUE, $mapping);
+      islandora_metadata_synchronization_start_sync($params, TRUE, $mapping);
     }
     else {
-      $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_oaipmh_url');
-      $params['set'] = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_set');
-      $params['mdxsl'] = variable_get('ubl_metadata_synchronization_source' . $sourceid . '_mdxsl');
+      $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_oaipmh_url');
+      $params['set'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_set');
+      $params['mdxsl'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_mdxsl');
 
-      ubl_metadata_synchronization_start_sync_with_url($oaipmh_url, $params, TRUE, $mapping);
+      islandora_metadata_synchronization_start_sync_with_url($oaipmh_url, $params, TRUE, $mapping);
     }
   }
   else {
-    $sources = ubl_metadata_synchronization_sources($sourceid);
+    $sources = islandora_metadata_synchronization_sources($sourceid);
     $foundids = array();
 
     if ($idsfile !== NULL) {
@@ -206,9 +206,9 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
           $mdprefix = $source['mdprefix'];
           $dsid = $source['target_dsid'];
 
-          $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+          $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
           if ($t) {
-            $an_id = ubl_metadata_synchronization_map_identifier($id, $mapping);
+            $an_id = islandora_metadata_synchronization_map_identifier($id, $mapping);
             if ($id !== $an_id) {
               $syncid = $an_id;
               if (isset($idprefix) && strlen($idprefix) > 0) {
@@ -216,18 +216,18 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
                   $syncid = $idprefix . $syncid;
                 }
               }
-              $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+              $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
             }
           }
           if ($t) {
             $dsid = $source['id_dsid'];
             $xpath = $source['path'];
-            $an_id = ubl_metadata_synchronization_get_identifier($object, $dsid, $xpath);
+            $an_id = islandora_metadata_synchronization_get_identifier($object, $dsid, $xpath);
             if ($an_id != NULL) {
               if ($id !== $an_id) {
-                $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
+                $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
                 if ($t) {
-                  $another_id = ubl_metadata_synchronization_map_identifier($an_id, $mapping);
+                  $another_id = islandora_metadata_synchronization_map_identifier($an_id, $mapping);
                   $syncid = $another_id;
                   if (isset($idprefix) && strlen($idprefix) > 0) {
                     if (substr($syncid, 0, strlen($idprefix)) !== $idprefix) {
@@ -235,7 +235,7 @@ function drush_ubl_metadata_synchronization_start_metadata_synchronization() {
                     }
                   }
                   if ($an_id !== $syncid) {
-                    $t = ubl_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+                    $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
                   }
                 }
               }

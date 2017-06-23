@@ -11,7 +11,7 @@
 function number_of_sources() {
   $nr_of_srcs = 1;
   for ($i = 1; $i <= 99; $i++) {
-    $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $i . '_oaipmh_url');
+    $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
       $nr_of_srcs = $i;
     }
@@ -23,7 +23,7 @@ function number_of_sources() {
 /**
  * Implements hook_form().
  */
-function ubl_metadata_synchronization_start_sync_form(array $form, array &$form_state) {
+function islandora_metadata_synchronization_start_sync_form(array $form, array &$form_state) {
   $form = array();
 
   $form['start_sync'] = array(
@@ -34,13 +34,13 @@ function ubl_metadata_synchronization_start_sync_form(array $form, array &$form_
   $form['last_synchronization_date'] = array(
     '#type' => 'textfield',
     '#title' => t('Last synchronization date'),
-    '#default_value' => variable_get('ubl_metadata_synchronization_last_synchronization_date'),
+    '#default_value' => variable_get('islandora_metadata_synchronization_last_synchronization_date'),
     '#description' => t('Use a date with the following format: YYYY-MM-DD'),
   );
   $form['synchronize_start'] = array(
     '#type' => 'submit',
     '#value' => t('Start synchronization'),
-    '#submit' => array('ubl_metadata_synchronization_start_sync_submit'),
+    '#submit' => array('islandora_metadata_synchronization_start_sync_submit'),
   );
   $form['where_are_sources'] = array(
     '#type' => 'item',
@@ -53,10 +53,10 @@ function ubl_metadata_synchronization_start_sync_form(array $form, array &$form_
 /**
  * Implements hook_form().
  */
-function ubl_metadata_synchronization_sources_form(array $form, array &$form_state) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
+function islandora_metadata_synchronization_sources_form(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
 
-  $xsl_files = ubl_metadata_synchronization_xsl_files();
+  $xsl_files = islandora_metadata_synchronization_xsl_files();
   $transform_options = array('' => t('No transformation selected'));
   $transform_options = array_merge($transform_options, $xsl_files);
 
@@ -76,7 +76,7 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
       $oaipmh_url = $form_state['input']['source' . $i . '_oaipmh_url'];
     }
     else {
-      $oaipmh_url = variable_get('ubl_metadata_synchronization_source' . $i . '_oaipmh_url');
+      $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
     }
     $form['group' . $i]['oai'] = array(
       '#type' => 'fieldset',
@@ -89,7 +89,7 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
       '#default_value' => $oaipmh_url,
     );
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
-      $reponame = ubl_metadata_synchronization_test_oai_pmh_url($oaipmh_url);
+      $reponame = islandora_metadata_synchronization_test_oai_pmh_url($oaipmh_url);
       if (isset($reponame) && strlen($reponame) > 0) {
         $markup = format_string('<img src="@image_url"/>!message', array(
           '@image_url' => url('misc/watchdog-ok.png'),
@@ -111,13 +111,13 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
     $form['group' . $i]['oai']['source' . $i . '_set'] = array(
       '#type' => 'textfield',
       '#title' => t('Set'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_set'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_set'),
       '#description' => t('The specific set to use at this end point, leave empty to use no set.'),
     );
     $form['group' . $i]['oai']['source' . $i . '_mdprefix'] = array(
       '#type' => 'textfield',
       '#title' => t('Metadata prefix'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_mdprefix'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_mdprefix'),
       '#description' => t('The type of metadata that is used for retrieval, for example: oai_dc.'),
     );
 
@@ -135,14 +135,14 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
     $form['group' . $i]['target']['source' . $i . '_target_dsid'] = array(
       '#type' => 'textfield',
       '#title' => t('Datastream ID'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_target_dsid'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_target_dsid'),
       '#description' => check_plain($desc),
     );
     $form['group' . $i]['target']['source' . $i . '_mdxsl'] = array(
       '#type' => 'select',
       '#title' => t('Stylesheet'),
       '#options' => $transform_options,
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_mdxsl'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl'),
       '#description' => t('Stylesheet to use for transforming the OAI-record XML to the target datastream. See "Stylesheets" to add to the above list.'),
     );
 
@@ -160,7 +160,7 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
     $form['group' . $i]['identifier']['source' . $i . '_id_dsid'] = array(
       '#type' => 'textfield',
       '#title' => t('Datastream ID'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_id_dsid'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_id_dsid'),
       '#description' => check_plain($desc),
     );
 
@@ -174,21 +174,21 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
     $form['group' . $i]['identifier']['source' . $i . '_path'] = array(
       '#type' => 'textfield',
       '#title' => t('XPath ID'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_path'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_path'),
       '#description' => check_plain($desc),
     );
     $form['group' . $i]['identifier']['source' . $i . '_id_prefix'] = array(
       '#type' => 'textfield',
       '#title' => t('Prefix ID'),
-      '#default_value' => variable_get('ubl_metadata_synchronization_source' . $i . '_id_prefix'),
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_id_prefix'),
       '#description' => t('The default prefix that is used if the identifier appears to be missing this prefix.'),
     );
   }
   $form['submit'] = array(
     '#type' => 'submit',
     '#value' => t('Save configuration'),
-    '#submit' => array('ubl_metadata_synchronization_settings_form_submit'),
-    '#validate' => array('ubl_metadata_synchronization_settings_form_validate'),
+    '#submit' => array('islandora_metadata_synchronization_settings_form_submit'),
+    '#validate' => array('islandora_metadata_synchronization_settings_form_validate'),
   );
 
   return $form;
@@ -197,9 +197,9 @@ function ubl_metadata_synchronization_sources_form(array $form, array &$form_sta
 /**
  * Implements hook_form_validate().
  */
-function ubl_metadata_synchronization_settings_form_validate(array $form, array &$form_state) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/retrieval_oaipmh');
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/objects_identifiers');
+function islandora_metadata_synchronization_settings_form_validate(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/objects_identifiers');
   for ($i = 1; $i <= number_of_sources() + 1; $i++) {
     $fs = array();
     $fs['oaipmh_url'] = $form_state['values']['source' . $i . '_oaipmh_url'];
@@ -212,7 +212,7 @@ function ubl_metadata_synchronization_settings_form_validate(array $form, array 
     $fs['mdprefix'] = $form_state['values']['source' . $i . '_mdprefix'];
 
     if (strlen($fs['oaipmh_url']) > 0) {
-      $reponame = ubl_metadata_synchronization_test_oai_pmh_url($fs['oaipmh_url']);
+      $reponame = islandora_metadata_synchronization_test_oai_pmh_url($fs['oaipmh_url']);
       if ($reponame == FALSE) {
         form_set_error('source' . $i . '_oaipmh_url', t('Must be a valid OAI-PMH URL!'));
       }
@@ -235,7 +235,7 @@ function ubl_metadata_synchronization_settings_form_validate(array $form, array 
       elseif (strlen($fs['path']) > 0) {
         // Check xpath.
         $doc = new DOMDocument();
-        $xpath = ubl_metadata_synchronization_new_xpath($doc);
+        $xpath = islandora_metadata_synchronization_new_xpath($doc);
 
         if (@$xpath->query($fs['path']) === FALSE) {
           form_set_error('source' . $i . '_path', t('Source !i has an invalid xpath', array('!i' => $i)));
@@ -264,30 +264,30 @@ function ubl_metadata_synchronization_settings_form_validate(array $form, array 
 /**
  * Implements hook_form_submit().
  */
-function ubl_metadata_synchronization_settings_form_submit(array $form, array &$form_state) {
+function islandora_metadata_synchronization_settings_form_submit(array $form, array &$form_state) {
   $vscounter = 1;
   for ($i = 1; $i <= 99; $i++) {
     if (array_key_exists('source' . $i . '_oaipmh_url', $form_state['values']) && strlen($form_state['values']['source' . $i . '_oaipmh_url']) > 0) {
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_oaipmh_url', $form_state['values']['source' . $i . '_oaipmh_url']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_set', $form_state['values']['source' . $i . '_set']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_id_prefix', $form_state['values']['source' . $i . '_id_prefix']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_target_dsid', $form_state['values']['source' . $i . '_target_dsid']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_id_dsid', $form_state['values']['source' . $i . '_id_dsid']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_path', $form_state['values']['source' . $i . '_path']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_mdxsl', $form_state['values']['source' . $i . '_mdxsl']);
-      variable_set('ubl_metadata_synchronization_source' . $vscounter . '_mdprefix', $form_state['values']['source' . $i . '_mdprefix']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_oaipmh_url', $form_state['values']['source' . $i . '_oaipmh_url']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_set', $form_state['values']['source' . $i . '_set']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_id_prefix', $form_state['values']['source' . $i . '_id_prefix']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_target_dsid', $form_state['values']['source' . $i . '_target_dsid']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_id_dsid', $form_state['values']['source' . $i . '_id_dsid']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_path', $form_state['values']['source' . $i . '_path']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_mdxsl', $form_state['values']['source' . $i . '_mdxsl']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_mdprefix', $form_state['values']['source' . $i . '_mdprefix']);
       $vscounter += 1;
     }
   }
   for ($i = $vscounter; $i <= 99; $i++) {
-    variable_del('ubl_metadata_synchronization_source' . $i . '_oaipmh_url');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_set');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_id_prefix');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_target_dsid');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_id_dsid');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_path');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_mdxsl');
-    variable_del('ubl_metadata_synchronization_source' . $i . '_mdprefix');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_set');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_id_prefix');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_target_dsid');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_id_dsid');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_path');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_mdxsl');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_mdprefix');
   }
   drupal_set_message(t('The settings have been saved!'));
 }
@@ -295,19 +295,19 @@ function ubl_metadata_synchronization_settings_form_submit(array $form, array &$
 /**
  * Implements hook_form_submit().
  */
-function ubl_metadata_synchronization_start_sync_submit(array $form, array &$form_state) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/synchronize');
+function islandora_metadata_synchronization_start_sync_submit(array $form, array &$form_state) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/synchronize');
   $date = $form_state['values']['last_synchronization_date'];
 
-  ubl_metadata_synchronization_start_sync(array('date' => $date));
+  islandora_metadata_synchronization_start_sync(array('date' => $date));
 }
 
 
 /**
  * Returns xsl files used for transform.
  */
-function ubl_metadata_synchronization_xsl_files() {
-  $files = file_scan_directory(drupal_get_path('module', 'ubl_metadata_synchronization') . '/xsl/', '/.*\.xslt?$/');
+function islandora_metadata_synchronization_xsl_files() {
+  $files = file_scan_directory(drupal_get_path('module', 'islandora_metadata_synchronization') . '/xsl/', '/.*\.xslt?$/');
 
   $transform_options = array();
 
@@ -316,7 +316,7 @@ function ubl_metadata_synchronization_xsl_files() {
   }
 
   $oai_uploaded_files = array();
-  $upload_path = 'public://ubl_metadata_synchronization_xsls';
+  $upload_path = 'public://islandora_metadata_synchronization_xsls';
   $uploaded_files = file_scan_directory($upload_path, '/.*\.xslt?$/');
 
   foreach ($uploaded_files as $up_file) {

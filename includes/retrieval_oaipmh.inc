@@ -9,7 +9,7 @@
 /**
  * Retrieve a record identified by syncid and mdprefix from a OAI-PMH source.
  */
-function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl, $syncid, $mdprefix) {
+function islandora_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl, $syncid, $mdprefix) {
   if (!isset($oaibaseurl)) {
     drupal_set_message(t("Please provide a valid OAI-PMH url in settings"));
     return FALSE;
@@ -24,7 +24,7 @@ function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl, $syn
 
   $domdoc = new DOMDocument();
   if ($domdoc->loadXML($data)) {
-    $domxpath = ubl_metadata_synchronization_new_xpath($domdoc);
+    $domxpath = islandora_metadata_synchronization_new_xpath($domdoc);
     $domnodelist = $domxpath->query('/oai:OAI-PMH/oai:error');
     if ($domnodelist->length == 1) {
       return FALSE;
@@ -37,7 +37,7 @@ function ubl_metadata_synchronization_retrieve_oaipmh_metadata($oaibaseurl, $syn
 /**
  * Test if a OAI-PMH url is valid.
  */
-function ubl_metadata_synchronization_test_oai_pmh_url($oaibaseurl) {
+function islandora_metadata_synchronization_test_oai_pmh_url($oaibaseurl) {
   if (isset($oaibaseurl)) {
     $oaiidurl = $oaibaseurl . "?verb=Identify";
 
@@ -58,8 +58,8 @@ function ubl_metadata_synchronization_test_oai_pmh_url($oaibaseurl) {
 /**
  * Retrieve a set of identifiers for changed metadata from OAI-PMH.
  */
-function ubl_metadata_synchronization_identifiers_for_changed_metadata($oaibaseurl, $params) {
-  module_load_include('inc', 'ubl_metadata_synchronization', 'includes/objects_identifiers');
+function islandora_metadata_synchronization_identifiers_for_changed_metadata($oaibaseurl, $params) {
+  module_load_include('inc', 'islandora_metadata_synchronization', 'includes/objects_identifiers');
   if (isset($oaibaseurl)) {
     $oailiurl = $oaibaseurl . "?verb=ListIdentifiers";
 
@@ -83,7 +83,7 @@ function ubl_metadata_synchronization_identifiers_for_changed_metadata($oaibaseu
 
       $domdoc = new DOMDocument();
       if ($domdoc->loadXML($data)) {
-        $domxpath = ubl_metadata_synchronization_new_xpath($domdoc);
+        $domxpath = islandora_metadata_synchronization_new_xpath($domdoc);
         $domnodelist = $domxpath->query('/oai:OAI-PMH/oai:error');
         if ($domnodelist->length == 1) {
           $result["oaierror"] = $domnodelist->item(0)->textContent;

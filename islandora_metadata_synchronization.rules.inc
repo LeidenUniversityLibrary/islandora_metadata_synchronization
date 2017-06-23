@@ -6,9 +6,9 @@
 /**
  * Implements hook_rules_event_info().
  */
-function ubl_metadata_synchronization_rules_event_info() {
+function islandora_metadata_synchronization_rules_event_info() {
   return array(
-    'ubl_metadata_synchronization_object_synchronized' => array(
+    'islandora_metadata_synchronization_object_synchronized' => array(
       'group' => t('Metadata synchronization'),
       'label' => t('Object synchronized'),
       'variables' => array(
@@ -19,7 +19,7 @@ function ubl_metadata_synchronization_rules_event_info() {
         ),
       ),
     ),
-    'ubl_metadata_synchronization_selective_objects_synchronized' => array(
+    'islandora_metadata_synchronization_selective_objects_synchronized' => array(
       'group' => t('Metadata synchronization'),
       'label' => t('Selective objects synchronized'),
       'variables' => array(
