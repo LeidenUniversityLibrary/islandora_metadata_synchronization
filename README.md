@@ -1,49 +1,46 @@
 # islandora_metadata_synchronization
 ===========================
 
-## Inleiding
+## Introduction
 
-islandora_metadata_synchronization is een Islandora solution pack waarmee de metadata van een Islandora record gesynchroniseerd kan worden met een externe bron. Deze externe bron moet het OAI-PMH protocol ondersteunen. De externe bron is de aanleverende partij voor de metadata van het betreffende record.
-Een islandora record wordt gesynchroniseerd als de metadata een identifier bevat die bruikbaar is door de bron. Deze identifier kan in de MODS metadata of Dublin Core metadata staan, of in andere metadata die bij het record hoort.
-Er kunnen meerdere bronnen gedefinieerd worden die bruikbaar zijn om mee te synchroniseren. Binnen de metadata kan de identifier gevonden worden. Deze plek kan per bron verschillend zijn. Dit is in te stellen in de configuratie van deze module.
-Records met een valide identifier kunnen automatisch en in batch gesynchroniseerd worden, zodat de metadata altijd up to date is. Ook is het mogelijk om een individueel record te synchroniseren, zelfs als er nog geen identifier binnen de metadata beschikbaar is.
+islandora_metadata_synchronization is an Islandora module that can sync metadata from an external source to an Islandora object. This external source must support the OAI-PMH protocol. 
+An islandora object can be synchronized if the identifier of the record in the external source is known. This identifier can be in MODS metadata or Dublin Core metadata, or in other metadata associated with the record. It is also possible to sync an Islandora object by filling out the identifier in a form.
+Multiple sources are possible, each with their own configuration, so it is possible to synchronize from multiple sources to multiple datastreams.
+Records with a valid identifier can be synchronized automatically and in batch so the metadata is always up to date. It is also possible to sync an individual record even if no identifier is available within the metadata.
 
-## Instellingen
+## Settings
 
-Ten eerste moeten de bronnen ingesteld worden die gebruikt gaan worden. Dit gebeurt in het admin scherm van de module. Ga naar Islandora -> Islandora Utility Modules -> islandora metadata synchronization -> Sources. Hier kunnen de bronnen ingesteld worden. Per bron stel je de volgende dingen in:
-* Data Source: waar komt de data vandaan
-   * Retrieval URL: Eerst stel je de OAI-PMH url in. Bij het bewaren wordt meteen duidelijk of de bron valide is.
-   * Set: Eventueel kan hier de naam van een set binnen die bron ingesteld worden.
-   * Metadata prefix: het type metadata dat je wilt ophalen, bijv marc21
-* Data Target: waar gaat de data heen
-   * Datastream ID: Hier stel je in onder welke DSID de metadata bewaard wordt. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
-   * Stylesheet: De metadata die opgehaald is, kan eerst nog worden getransformeerd naar een ander formaat. Hier stel je dat in.
-* Identifier Location: waar is te vinden welke identifier gebruikt moet worden voor synchronisatie
-   * Datastream ID: In het Datastream veld stel je de DSID van de metadata die de identifier bevat in. Gebruikelijke waarden zijn MODS, DC (voor Dublin Core)
-   * XPath ID: in het xpath veld stel je het xpath in waarmee binnen de metadata de identifier gevonden kan worden. De volgende namespaces zijn bekend: mods, dc, enz.
-   * Prefix ID: aangezien het voor kan komen dat de metadata wel een identifier bevat, maar deze niet binnen OAI-PMH gebruikt kan worden vanwege het missen van de nodig prefix, kan een standaard identifier prefix ingesteld worden. Zie synchroniseren met drush voor mappings van identifiers.
+Go to Islandora -> Islandora Utility Modules -> UBL Metadata Synchronization -> Sources. Here the sources can be set. For each source, you enter the following:
+* Data Source: Where does the data come from
+   * Retrieval URL: First you set the OAI-PMH url. When stored, it is immediately clear whether the source is valid.
+   * Set: Optionally, the name of a set for that source.
+   * Metadata prefix: The type of metadata you want to retrieve, eg marc21
+* Data Target: Where is the data going?
+   * Datastream ID: Here you specify which DSID the metadata will be stored, for example MODS, DC (for Dublin Core)
+   * Stylesheet: The metadata retrieved should be transformed to another format. Specify the stylesheet to use here. Other stylesheets can be uploaded in the Stylesheets tab.
+* Identifier Location: Where to find the identifier to be used for synchronization
+   * Datastream ID: In the Datastream field, set the DSID of the metadata containing the identifier. Usual values are MODS, DC (for Dublin Core)
+   * XPath ID: In the xpath field, set the xpath to the identifier within the metadata. The following namespaces are known: oai, mods, dc, marc.
+   * Prefix ID: Since the metadata may contain an identifier, but can not be used within OAI-PMH due to missing the required prefix, a default identifier prefix can be set. See synchronizing with drush for mappings of identifiers.
 
 
-Na het instellen van 1 of meerdere bronnen druk je op "Save configuration". Je kan meteen zien of de instellingen goed zijn.
+After setting up one or more sources, press "Save configuration". You can instantly see if the settings are correct.
 
-## Synchroniseren van 1 record
+## Synchronize from 1 record
 
-Om te kijken of de synchronisatie instellingen werken of om gewoon van 1 bepaald record de metadata op te halen, kan je een bepaald record synchroniseren. Ga naar het record toe, druk op "Manage", en dan op "Synchronize". Bovenaan worden de beschikbare bronnen getoond. Ook zie je of een bepaalde bron gebruikt kan worden en of de identifier in de metadata gevonden kon worden. Als dit zo is, kan je op de knop "Synchronize now with source" drukken om de metadata over te halen.
-Ook kan je zonder dat er metadata is met een identifier de metadata overhalen voor een specifieke identifier en bron. Vul hiervoor de identifier in bij het veld "Synchronization Identifier" en druk op de knop "Synchronize with this Sync ID and source". Er wordt meteen aangegeven of de synchronisatie gelukt is. Als de synchronisatie gelukt is, kan je bij "Datastreams" zien welke datastreams zijn gewijzigd.
+To see if the sync settings work or you want to synchronize the metadata from a particular record, you can sync a particular record. Go to the record, press "Manage", and then "Synchronize". At the top, the available sources are shown. You can also see if a particular source can be used and whether the identifier could be found in the metadata. If this is the case, you can press the "Synchronize now with source" button to retrieve the metadata.
+Alternatively you can retrieve the metadata for a specific identifier and source. Enter the identifier in the "Synchronization Identifier" field and press the "Synchronize with this Sync ID and source" button. It is immediately indicated whether the synchronization has been successful. If synchronization has been successful, you can see which datastreams have been changed in "Datastreams".
 
-## Synchroniseren meerdere records
+## Synchronize multiple records
 
-In het admin scherm (Islandora -> Islandora Utility Modules -> islandora metadata synchronization -> Start synchronization) kan je alle records synchroniseren. Vul de datum in vanaf wanneer je de metadata wilt gaan synchroniseren in het veld "Last synchronization date" (dit veld bevat de datum van de laatste succesvolle synchronisatie) en druk op knop "Start synchronization". Als de synchronisatie succesvol verloopt wordt dit gemeld en verandert de datum in het veld Last synchronization date" naar de datum van het meest recent gewijzigde metadata record.
+In the admin screen (Islandora -> Islandora Utility Modules -> islandora metadata synchronization -> Start sync) you can synchronize all records. Enter the date from which you want to sync the metadata in the Last synchronization date field (this field contains the date of the last successful sync) and press the "Start sync" button. If the synchronization runs successfully, this will be reported and the date in the Last synchronization date field is changed to the date of the most recently modified metadata record.
 
-## Synchroniseren met drush
+## Synchronize with drush
 
-Ook is het mogelijk om een batch synchronisatie via drush te starten. Dit heeft als voordeel dat er iets meer controle is over hoe gesynchroniseerd wordt en eventueel kan men het drush commando gescheduled laten draaien.
-Het drush commando heet "start_metadata_synchronization" (smds) en heeft de volgende opties:
-* --date: een verplicht datum veld (YYYY-MM-DD), maar niet te gebruiken samen met de optie --ids_file. De metadata die sinds deze datum is gewijzigd wordt gebruikt om te synchroniseren. Eventueel kan de waarde "last" gebruikt worden om te synchroniseren sinds de datum dat het voor het laatst gelukt is.
-* --source: de bron die gebruikt moet worden voor de synchronisatie. Dit is het nummer van de bron zoals die in het admin scherm is ingevuld. Als deze optie niet gebruikt wordt, dan worden alle bronnen met een retrieve URL gebruikt.
-* --mapping_file: eventueel kan een bestand mee worden gegeven waar de mapping tussen de identifiers in de bron en de identifiers in Islandora staat. Dit is een tab delimited bestand waar op elke regel eerst een identifier die binnen de bron gebruikt wordt staat, gevolgd door een tab en dan de identifier die binnen een record in Islandora staat.
-* --mapping_pattern en --mapping_replacement: als de identifier binnen de bron erg lijkt op de identifier binnen het record in Islandora, kunnen deze twee opties gebruikt worden om de identifier om te schrijven. --mapping_pattern verwacht een reguliere expressie. Als dit patroon gevonden wordt in de identifier dan wordt de waarde van --mapping_replacement gebruikt om dit te vervangen.
-* --ids_file: ook kan een bestand opgegeven worden met de ID's van Islandora records die gesynchroniseerd moeten worden. Deze optie kan niet samen met de --date optie gebruikt worden. Op elke regel van het bestand moet een ID staan die uniek een Islandora record aanwijst. Dit kan het Fedora ID zijn, maar ook een identifier die in de metadata is opgenomen. Eerst wordt geprobeerd om het gevonden record te synchroniseren op basis van de ID waarmee het record gevonden werd. Als dit niet lukt wordt geprobeerd om een identifier uit de bestaande metadata te halen en daarmee wordt dan gesynchroniseerd. Als er gebruik wordt gemaakt van de --mapping_* opties dan wordt de mapping ingezet; eerst voor de identifier waarmee het record gevonden werd, als dat mislukt ook voor de identifier uit de metadata van het record.
-
- 
-
+It is also possible to start a batch synchronization via drush. This has the advantage that there is a little more control over how to synchronize and, if necessary, you can run the drush command scheduled.
+The drush command is called "start_metadata_synchronization" (smds) and has the following options:
+* --date: A required date field (YYYY-MM-DD), cannot be used together with --ids_file. Only the records that were changed since this date are synchronized. Optionally, the value "last" can be used to synchronize since the last succeeded date.
+* --ids_file: a CSV file with the identifiers of Islandora records that need to be synchronized. This option can not be used together with the --date option. This can be the Islandora identifier, but also an identifier included in the metadata. If an Islandora object is found for this identifier, synchronization is attempted with this identifier. If this fails, then the identifier will be retrieved from the datastream of the islandora object. If you use the --mapping_ * options, the mapping will be used; First for the identifier that found the record if that also fails for the identifier from the mapping.
+* - source: the source to be used for synchronization. This is the source number as entered in the admin screen. If this option is not used then all sources are tried.
+* - mapping_file: A file may be provided with the mapping between the identifiers in the source and the identifiers in Islandora. This is a CSV file, where each line contains an identifier that is used within the source, followed by a separator and then the identifier contained within a record in Islandora.
+* - mapping_pattern and --mapping_replacement: If the identifier within the source resembles the identifier within the Islandora record, these two options can be used to write the identifier. --mapping_pattern expects a regular expression. If this pattern is found in the identifier, then the value of --mapping_replacement is used to replace it.
