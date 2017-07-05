@@ -320,11 +320,16 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
     $results['syncerrors'] = array();
   }
   $results['oaiidscount'] += count($oairesult['ids']);
-  foreach ($oairesult['ids'] as $an_id) {
-    $an_id = islandora_metadata_synchronization_map_identifier($an_id, $mapping);
-    $object = find_fedora_object_for_id($an_id);
+  foreach ($oairesult['ids'] as $oaiid) {
+    $object = find_fedora_object_for_id($oaiid);
+    if (!$object) {
+      $an_id = islandora_metadata_synchronization_map_identifier($oaiid, $mapping);
+      if ($an_id !== $oaiid) {
+        $object = find_fedora_object_for_id($an_id);
+      }
+    }
     if ($object) {
-      $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
+      $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $oaiid, $mdprefix, $mdxsl, $dsid);
       if ($t) {
         $results['syncerrors'][] = $t;
         if ($usingdrush) {
@@ -436,8 +441,8 @@ function islandora_metadata_synchronization_finished($success, $results, $operat
  */
 function find_fedora_object_for_id($identifier) {
   module_load_include('inc', 'islandora', 'includes/utilities');
-  module_load_include('inc', 'islandora_solr_search', 'includes/query_processor');
-  module_load_include('inc', 'islandora_solr_search', 'includes/utilities');
+  module_load_include('inc', 'islandora_solr', 'includes/query_processor');
+  module_load_include('inc', 'islandora_solr', 'includes/utilities');
 
   if (islandora_is_valid_pid($identifier)) {
     // This looks like a islandora object id.

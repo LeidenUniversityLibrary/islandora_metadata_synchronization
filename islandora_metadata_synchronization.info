@@ -2,6 +2,7 @@ name = Metadata synchronization
 description = Metadata synchronization from a library system (Aleph/Alma) to Islandora, based on OAI-PMH and an identifier
 dependencies[] = islandora_marcxml
 dependencies[] = islandora_batch
+dependencies[] = islandora_solr
 package = Islandora Tools
 version = "7.x-2.x-dev"
 core = "7.x"
