@@ -44,3 +44,10 @@ The drush command is called "start_metadata_synchronization" (smds) and has the 
 * - source: the source to be used for synchronization. This is the source number as entered in the admin screen. If this option is not used then all sources are tried.
 * - mapping_file: A file may be provided with the mapping between the identifiers in the source and the identifiers in Islandora. This is a CSV file, where each line contains an identifier that is used within the source, followed by a separator and then the identifier contained within a record in Islandora.
 * - mapping_pattern and --mapping_replacement: If the identifier within the source resembles the identifier within the Islandora record, these two options can be used to write the identifier. --mapping_pattern expects a regular expression. If this pattern is found in the identifier, then the value of --mapping_replacement is used to replace it.
+
+
+## License
+
+[GPLv3](LICENSE.txt)
+Copyright 2017 Leiden University Library
+
