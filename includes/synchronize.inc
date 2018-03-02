@@ -28,7 +28,7 @@
 /**
  * Synchronize the metadata via OAI-PMH for a specific object.
  */
-function islandora_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid = 'MODS', $force = FALSE) {
+function islandora_metadata_synchronization_sync_metadata_for_object_using(AbstractObject $object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $addmdxsl = NULL, $dsid = 'MODS', $force = FALSE) {
   module_load_include('inc', 'islandora_metadata_synchronization', 'includes/retrieval_oaipmh');
   $oaimdxml = islandora_metadata_synchronization_retrieve_oaipmh_metadata($oaipmh_url, $syncid, $mdprefix);
 
@@ -53,13 +53,27 @@ function islandora_metadata_synchronization_sync_metadata_for_object_using(Abstr
   $xml = islandora_metadata_synchronization_xsl_transform($oaimdxml, $mdxsl, $parameters);
 
   if (!$xml) {
-    return t("Could not create @dsid for object @objid with sync id @syncid",
+    return t("Failed to do primary transformation for @dsid of object @objid with sync id @syncid",
       array(
         "@dsid" => $dsid,
         "@objid" => $object->id,
         "@syncid" => $syncid,
       )
     );
+  }
+
+  if (isset($addmdxsl)) {
+    $xml = islandora_metadata_synchronization_xsl_transform($xml, $addmdxsl, $parameters);
+  
+    if (!$xml) {
+      return t("Failed to do secondary transformation for @dsid of object @objid with sync id @syncid",
+        array(
+          "@dsid" => $dsid,
+          "@objid" => $object->id,
+          "@syncid" => $syncid,
+        )
+      );
+    }
   }
 
   $ischanged = islandora_metadata_synchronization_save_xml($object, $xml, $dsid, "$dsid XML", $force);
@@ -159,6 +173,7 @@ function islandora_metadata_synchronization_sources($sourceid = NULL) {
       $targetdsid = variable_get('islandora_metadata_synchronization_source' . $i . '_target_dsid');
       $path = variable_get('islandora_metadata_synchronization_source' . $i . '_path');
       $mdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl');
+      $addmdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_addmdxsl');
 
       $sources[$i] = array(
         'oaipmh_url' => $oaipmh_url,
@@ -169,6 +184,7 @@ function islandora_metadata_synchronization_sources($sourceid = NULL) {
         'target_dsid'  => $targetdsid,
         'path'         => $path,
         'mdxsl'        => $mdxsl,
+        'addmdxsl'     => $addmdxsl,
       );
     }
   }
@@ -188,6 +204,7 @@ function islandora_metadata_synchronization_start_sync($params, $usingdrush = FA
     $set = variable_get('islandora_metadata_synchronization_source' . $i . '_set');
     $mdprefix = variable_get('islandora_metadata_synchronization_source' . $i . '_mdprefix');
     $mdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl');
+    $addmdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_addmdxsl');
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
       $key = $oaipmh_url;
       if (isset($set)) {
@@ -198,6 +215,7 @@ function islandora_metadata_synchronization_start_sync($params, $usingdrush = FA
         $newparams['set'] = $set;
         $newparams['mdprefix'] = $mdprefix;
         $newparams['mdxsl'] = $mdxsl;
+        $newparams['addmdxsl'] = $addmdxsl;
         islandora_metadata_synchronization_start_sync_with_url($oaipmh_url, $newparams, $usingdrush, $mapping);
         $oaiurls[$key] = $i;
       }
@@ -323,6 +341,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
   }
 
   $mdxsl = $params['mdxsl'];
+  $addmdxsl = $params['addmdxsl'];
   $mdprefix = $params['mdprefix'];
   $dsid = $params['target_dsid'];
 
@@ -348,7 +367,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
       }
     }
     if ($object) {
-      $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $oaiid, $mdprefix, $mdxsl, $dsid);
+      $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $oaiid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
       if ($t) {
         $results['syncerrors'][] = $t;
         if ($usingdrush) {
@@ -369,7 +388,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
     }
   }
   if (isset($oairesult["resumptiontoken"])) {
-    $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl);
+    $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl, 'addmdxsl' => $addmdxsl);
     if ($usingdrush) {
       islandora_metadata_synchronization_handle_batch($oaiurl, $newparams, $results, $usingdrush, $mapping, $context);
     }

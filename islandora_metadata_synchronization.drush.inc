@@ -188,6 +188,7 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
       $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_oaipmh_url');
       $params['set'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_set');
       $params['mdxsl'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_mdxsl');
+      $params['addmdxsl'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_addmdxsl');
 
       islandora_metadata_synchronization_start_sync_with_url($oaipmh_url, $params, TRUE, $mapping);
     }
@@ -222,10 +223,11 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
             }
           }
           $mdxsl = $source['mdxsl'];
+          $addmdxsl = $source['addmdxsl'];
           $mdprefix = $source['mdprefix'];
           $dsid = $source['target_dsid'];
 
-          $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+          $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
           if ($t) {
             $an_id = islandora_metadata_synchronization_map_identifier($id, $mapping);
             if ($id !== $an_id) {
@@ -235,7 +237,7 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
                   $syncid = $idprefix . $syncid;
                 }
               }
-              $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+              $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
             }
           }
           if ($t) {
@@ -244,7 +246,7 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
             $an_id = islandora_metadata_synchronization_get_identifier($object, $dsid, $xpath);
             if ($an_id != NULL) {
               if ($id !== $an_id) {
-                $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $dsid);
+                $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $an_id, $mdprefix, $mdxsl, $addmdxsl, $dsid);
                 if ($t) {
                   $another_id = islandora_metadata_synchronization_map_identifier($an_id, $mapping);
                   $syncid = $another_id;
@@ -254,7 +256,7 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
                     }
                   }
                   if ($an_id !== $syncid) {
-                    $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $dsid);
+                    $t = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaiurl, $syncid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
                   }
                 }
               }

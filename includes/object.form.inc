@@ -198,6 +198,7 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
   $idprefix = variable_get('islandora_metadata_synchronization_source' . $sourceurlnr . '_id_prefix');
   $mdprefix = variable_get('islandora_metadata_synchronization_source' . $sourceurlnr . '_mdprefix');
   $mdxsl = variable_get('islandora_metadata_synchronization_source' . $sourceurlnr . '_mdxsl');
+  $addmdxsl = variable_get('islandora_metadata_synchronization_source' . $sourceurlnr . '_addmdxsl');
   $dsid = variable_get('islandora_metadata_synchronization_source' . $sourceurlnr . '_target_dsid');
 
   if (isset($idprefix) && strlen($idprefix) > 0) {
@@ -206,7 +207,7 @@ function sync_id_editor_form_synchronize_with_syncid_submit(array $form, array &
     }
   }
 
-  $result = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid);
+  $result = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
 
   if ($result) {
     drupal_set_message(check_plain($result), 'error');
@@ -230,6 +231,7 @@ function sync_id_editor_form_synchronize_submit(array $form, array &$form_state)
   $path = variable_get('islandora_metadata_synchronization_source' . $syncsource . '_path');
   $mdprefix = variable_get('islandora_metadata_synchronization_source' . $syncsource . '_mdprefix');
   $mdxsl = variable_get('islandora_metadata_synchronization_source' . $syncsource . '_mdxsl');
+  $addmdxsl = variable_get('islandora_metadata_synchronization_source' . $syncsource . '_addmdxsl');
   $dsid = variable_get('islandora_metadata_synchronization_source' . $syncsource . '_target_dsid');
 
   $syncid = islandora_metadata_synchronization_get_identifier($object, $iddsid, $path);
@@ -240,7 +242,7 @@ function sync_id_editor_form_synchronize_submit(array $form, array &$form_state)
     }
   }
 
-  $result = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $dsid);
+  $result = islandora_metadata_synchronization_sync_metadata_for_object_using($object, $oaipmh_url, $syncid, $mdprefix, $mdxsl, $addmdxsl, $dsid);
 
   if ($result) {
     drupal_set_message(check_plain($result), 'error');

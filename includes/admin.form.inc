@@ -159,10 +159,17 @@ function islandora_metadata_synchronization_sources_form(array $form, array &$fo
     );
     $form['group' . $i]['target']['source' . $i . '_mdxsl'] = array(
       '#type' => 'select',
-      '#title' => t('Stylesheet'),
+      '#title' => t('Primary stylesheet'),
       '#options' => $transform_options,
       '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl'),
       '#description' => t('Stylesheet to use for transforming the OAI-record XML to the target datastream. See "Stylesheets" to add to the above list.'),
+    );
+    $form['group' . $i]['target']['source' . $i . '_addmdxsl'] = array(
+      '#type' => 'select',
+      '#title' => t('Secondary stylesheet'),
+      '#options' => $transform_options,
+      '#default_value' => variable_get('islandora_metadata_synchronization_source' . $i . '_addmdxsl'),
+      '#description' => t('Optional stylesheet to use for additional transformation of the target XML. See "Stylesheets" to add to the above list.'),
     );
 
     $form['group' . $i]['identifier'] = array(
@@ -228,6 +235,7 @@ function islandora_metadata_synchronization_settings_form_validate(array $form, 
     $fs['id_dsid'] = $form_state['values']['source' . $i . '_id_dsid'];
     $fs['path'] = $form_state['values']['source' . $i . '_path'];
     $fs['mdxsl'] = $form_state['values']['source' . $i . '_mdxsl'];
+    $fs['addmdxsl'] = $form_state['values']['source' . $i . '_mdxsl'];
     $fs['mdprefix'] = $form_state['values']['source' . $i . '_mdprefix'];
 
     if (strlen($fs['oaipmh_url']) > 0) {
@@ -269,6 +277,7 @@ function islandora_metadata_synchronization_settings_form_validate(array $form, 
         'id_dsid' => t('Identifier datastream ID'),
         'path' => t('Identfier xpath'),
         'mdxsl' => t('Stylesheet'),
+        'addmdxsl' => t('Additional stylesheet'),
         'mdprefix' => t('OAI-PMH metadata prefix'),
       );
       foreach ($names as $key => $value) {
@@ -294,6 +303,7 @@ function islandora_metadata_synchronization_settings_form_submit(array $form, ar
       variable_set('islandora_metadata_synchronization_source' . $vscounter . '_id_dsid', $form_state['values']['source' . $i . '_id_dsid']);
       variable_set('islandora_metadata_synchronization_source' . $vscounter . '_path', $form_state['values']['source' . $i . '_path']);
       variable_set('islandora_metadata_synchronization_source' . $vscounter . '_mdxsl', $form_state['values']['source' . $i . '_mdxsl']);
+      variable_set('islandora_metadata_synchronization_source' . $vscounter . '_addmdxsl', $form_state['values']['source' . $i . '_addmdxsl']);
       variable_set('islandora_metadata_synchronization_source' . $vscounter . '_mdprefix', $form_state['values']['source' . $i . '_mdprefix']);
       $vscounter += 1;
     }
@@ -306,6 +316,7 @@ function islandora_metadata_synchronization_settings_form_submit(array $form, ar
     variable_del('islandora_metadata_synchronization_source' . $i . '_id_dsid');
     variable_del('islandora_metadata_synchronization_source' . $i . '_path');
     variable_del('islandora_metadata_synchronization_source' . $i . '_mdxsl');
+    variable_del('islandora_metadata_synchronization_source' . $i . '_addmdxsl');
     variable_del('islandora_metadata_synchronization_source' . $i . '_mdprefix');
   }
   drupal_set_message(t('The settings have been saved!'));
