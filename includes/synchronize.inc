@@ -62,7 +62,7 @@ function islandora_metadata_synchronization_sync_metadata_for_object_using(Abstr
     );
   }
 
-  if (isset($addmdxsl)) {
+  if (isset($addmdxsl) && strlen($addmdxsl) > 0) {
     $xml = islandora_metadata_synchronization_xsl_transform($xml, $addmdxsl, $parameters);
   
     if (!$xml) {
