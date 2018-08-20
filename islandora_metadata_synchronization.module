@@ -31,7 +31,7 @@ function islandora_metadata_synchronization_menu() {
   $items = array();
 
   $items['admin/islandora/tools/islandora_metadata_synchronization'] = array(
-    'title' => 'islandora metadata synchronization',
+    'title' => 'Islandora Metadata Synchronization',
     'description' => 'Settings for islandora metadata synchronization.',
     'type' => MENU_NORMAL_ITEM,
     'page callback' => 'drupal_get_form',
@@ -110,7 +110,7 @@ function islandora_metadata_synchronization_form_system_modules_alter(&$form, &$
     '#href' => 'admin/islandora/tools/islandora_metadata_synchronization',
     '#options' => array('attributes' => array(
       'class' => array('module-link','module-link-configure'),
-      'title' => t('Settings for islandora metadata synchronization.'),
+      'title' => t('Settings for Islandora Metadata Synchronization.'),
     )),
   );
 }
