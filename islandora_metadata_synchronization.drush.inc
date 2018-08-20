@@ -187,6 +187,8 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
     else {
       $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_oaipmh_url');
       $params['set'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_set');
+      $params['mdprefix'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_mdprefix');
+      $params['target_dsid'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_target_dsid');
       $params['mdxsl'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_mdxsl');
       $params['addmdxsl'] = variable_get('islandora_metadata_synchronization_source' . $sourceid . '_addmdxsl');
 

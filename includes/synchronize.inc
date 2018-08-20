@@ -203,6 +203,7 @@ function islandora_metadata_synchronization_start_sync($params, $usingdrush = FA
     $oaipmh_url = variable_get('islandora_metadata_synchronization_source' . $i . '_oaipmh_url');
     $set = variable_get('islandora_metadata_synchronization_source' . $i . '_set');
     $mdprefix = variable_get('islandora_metadata_synchronization_source' . $i . '_mdprefix');
+    $dsid = variable_get('islandora_metadata_synchronization_source' . $i . '_target_dsid');
     $mdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_mdxsl');
     $addmdxsl = variable_get('islandora_metadata_synchronization_source' . $i . '_addmdxsl');
     if (isset($oaipmh_url) && strlen($oaipmh_url) > 0) {
@@ -214,6 +215,7 @@ function islandora_metadata_synchronization_start_sync($params, $usingdrush = FA
         $newparams = $params;
         $newparams['set'] = $set;
         $newparams['mdprefix'] = $mdprefix;
+        $newparams['target_dsid'] = $dsid;
         $newparams['mdxsl'] = $mdxsl;
         $newparams['addmdxsl'] = $addmdxsl;
         islandora_metadata_synchronization_start_sync_with_url($oaipmh_url, $newparams, $usingdrush, $mapping);
@@ -388,7 +390,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
     }
   }
   if (isset($oairesult["resumptiontoken"])) {
-    $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl, 'addmdxsl' => $addmdxsl);
+    $newparams = array('resumptiontoken' => $oairesult["resumptiontoken"], 'mdxsl' => $mdxsl, 'addmdxsl' => $addmdxsl, 'target_dsid' => $dsid, 'mdprefix' => $mdprefix);
     if ($usingdrush) {
       islandora_metadata_synchronization_handle_batch($oaiurl, $newparams, $results, $usingdrush, $mapping, $context);
     }
