@@ -2311,7 +2311,8 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 
 		<!-- AQ1.5, AQ1.7 deleted tags 777 and 787 from the following select for relatedItem mapping -->
 		<!-- 1.45 and 1.46 - AQ1.24 and 1.25 tmee-->
-		<xsl:for-each select="marc:datafield[@tag=765]|marc:datafield[@tag=767]|marc:datafield[@tag=775]">
+		<!-- Reintroduce tag 787 for relateditem mapping -->
+		<xsl:for-each select="marc:datafield[@tag=765]|marc:datafield[@tag=767]|marc:datafield[@tag=775]|marc:datafield[@tag=787]">
 			<relatedItem type="otherVersion">
 				<xsl:call-template name="relatedItem76X-78X"/>
 			</relatedItem>
