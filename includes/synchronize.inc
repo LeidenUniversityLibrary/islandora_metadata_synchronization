@@ -361,7 +361,8 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
   }
   $results['oaiidscount'] += count($oairesult['ids']);
   foreach ($oairesult['ids'] as $oaiid) {
-    $object = find_fedora_object_for_id($oaiid);
+    $an_id = $oaiid;
+    $object = find_fedora_object_for_id($an_id);
     if (!$object) {
       $an_id = islandora_metadata_synchronization_map_identifier($oaiid, $mapping);
       if ($an_id !== $oaiid) {
