@@ -106,6 +106,7 @@ function islandora_metadata_synchronization_identifiers_for_changed_metadata($oa
         $domnodelist = $domxpath->query('/oai:OAI-PMH/oai:error');
         if ($domnodelist->length == 1) {
           $result["oaierror"] = $domnodelist->item(0)->textContent;
+          $result["oaierrorcode"] = $domnodelist->item(0)->getAttribute('code');
         }
         $domnodelist = $domxpath->query('/oai:OAI-PMH/oai:responseDate');
         if ($domnodelist->length == 1) {

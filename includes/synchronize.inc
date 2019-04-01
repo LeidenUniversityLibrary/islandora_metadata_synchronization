@@ -237,7 +237,7 @@ function islandora_metadata_synchronization_start_sync($params, $usingdrush = FA
   }
   $t = t("Synchronized with the following sources: @sources", array("@sources" => implode(" and ", $oaiurls)));
   if ($usingdrush) {
-    drush_log($t, "ok");
+    drush_log($t, "notice");
   }
   else {
     drupal_set_message($t);
@@ -310,8 +310,8 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
 
   $oairesult = islandora_metadata_synchronization_identifiers_for_changed_metadata($oaiurl, $params);
 
-  if (isset($oairesult['oaierror'])) {
-    if (($oairesult['oaierror'] === 'no record match the search criteria') && !isset($oairesult['oaiidscount'])) {
+  if (isset($oairesult['oaierrorcode'])) {
+    if (($oairesult['oaierrorcode'] === 'noRecordsMatch') && !isset($oairesult['oaiidscount'])) {
       $text = t("No records available to synchronize; all up-to-date!");
       if ($usingdrush) {
         drush_log($text, 'ok');
@@ -325,7 +325,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
       }
     }
     else {
-      $text = t('Error while retrieving records: @error', array('@error' => $oairesult['oaierror']));
+      $text = t('Error while retrieving records: @error (code @code)', array('@error' => $oairesult['oaierror'], '@code' => $oairesult['oaierrorcode']));
       if ($usingdrush) {
         drush_log($text, 'warning');
       }
@@ -443,7 +443,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
     $date = $results['oairesponsedate'];
     if ($date) {
       variable_set('islandora_metadata_synchronization_last_synchronization_date', $date);
-      $text = t('Successfully synchronized records @syncedcount out of @totalcount, with @errorcount errors',
+      $text = t('Synchronized @syncedcount records out of @totalcount, with @errorcount errors',
                 array(
                   '@syncedcount' => $results['syncsuccesses'],
                   '@errorcount' => count($results['syncerrors']),
@@ -451,7 +451,7 @@ function islandora_metadata_synchronization_handle_batch($oaiurl, $params, $resu
                 )
               );
       if ($usingdrush) {
-        drush_log($text, (count($results['syncerrors']) == 0) ? 'ok' : 'warning');
+        drush_log($text, (count($results['syncerrors']) == 0) ? 'success' : 'warning');
       }
       else {
         drupal_set_message($text, (count($results['syncerrors']) == 0) ? 'status' : 'warning');
