@@ -38,6 +38,7 @@ function islandora_metadata_synchronization_drush_command() {
       'mapping_file' => 'Optional, a file containing a mapping for the identifiers. Each line contains 2 identifiers separated by a tab. The first identifier is the one that is used in the source, the second is the one that is used in islandora.',
       'ids_file' => 'Optional, a file containing a list of identifiers. Only those identifiers will be synchronised. The mapping are tried on those identifiers as well and if they fail, the identifier from the metadata is used with the mapping.',
       'batch_set_id' => 'Optional, a batch set id of a set that was previously ingested succesfully. Only those records will be synchronised.',
+      'print_start' => 'If exists, prints a start message like: "Synchronisation started at 2018-04-01 14:58:34 from date 2018-03-20T"',
     ),
     'aliases' => array('smds'),
     'examples' => array(
@@ -130,6 +131,7 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
   $mapfile = drush_get_option('mapping_file');
   $idsfile = drush_get_option('ids_file');
   $batchsetid = drush_get_option('batch_set_id');
+  $printstart = drush_get_option('print_start');
 
   $mapping = NULL;
   if ($mappat != NULL && $maprep != NULL) {
@@ -176,10 +178,25 @@ function drush_islandora_metadata_synchronization_start_metadata_synchronization
 
   if ($date === 'last') {
     $date = variable_get('islandora_metadata_synchronization_last_synchronization_date');
-    drush_log("Synchronizing from date $date");
+  }
+  if (isset($printstart)) {
+    $start = date("Y-m-d H:i:s");
+    $message = ($printstart === TRUE)?"Synchronisation started at @start, using fromdate=@date":$printstart;
+    $args = array(
+      '@start' => $start,
+      '@date' => $date,
+      '@sourceid' => $sourceid,
+      '@mapping_pattern' => $mappat,
+      '@mapping_replacement' => $maprep,
+      '@mapping_file' => $mapfile,
+      '@ids_file' => $idsfile,
+      'batch_set_id' => $batchsetid,
+    );
+    drush_log(t($message, $args), 'ok');
   }
 
   if ($date !== NULL) {
+    drush_log("Synchronizing from date $date");
     $params = array('date' => $date);
     if ($sourceid == NULL) {
       islandora_metadata_synchronization_start_sync($params, TRUE, $mapping);
