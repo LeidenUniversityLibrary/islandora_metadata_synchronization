@@ -838,6 +838,12 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 		<xsl:for-each select="marc:datafield[@tag=655]">
 			<xsl:call-template name="createGenreFrom655"/>
 		</xsl:for-each>
+		<xsl:for-each select="marc:datafield[@tag=955]">
+			<xsl:call-template name="createGenreFrom955"/>
+		</xsl:for-each>
+		<xsl:for-each select="marc:datafield[@tag=956]">
+			<xsl:call-template name="createSubjectFrom956"/>
+		</xsl:for-each>
 
 		<!-- originInfo 250 and 260 -->
 
@@ -4526,6 +4532,58 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 		</genre>
 	</xsl:template>
 
+	<xsl:template name="createGenreFrom955">
+		<genre authority="aat">
+			<xsl:attribute name="authority">
+				<xsl:value-of select="marc:subfield[@code='2']"/>
+			</xsl:attribute>
+			<xsl:attribute name="valueURI">
+				<xsl:value-of select="marc:subfield[@code='0']"/>
+			</xsl:attribute>
+			<xsl:attribute name="displayLabel">
+				<xsl:value-of select="'Resource Type'"/>
+			</xsl:attribute>
+			<xsl:attribute name="type">
+				<xsl:value-of select="'Resource Type'"/>
+			</xsl:attribute>
+			<!-- Template checks for altRepGroup - 880 $6 -->
+			<xsl:call-template name="xxx880"/>
+			<xsl:call-template name="subfieldSelectWithoutTrailingPoint">
+				<xsl:with-param name="codes">a</xsl:with-param>
+				<xsl:with-param name="delimeter">-</xsl:with-param>
+			</xsl:call-template>
+		</genre>
+	</xsl:template>
+
+	<xsl:template name="createSubjectFrom956">
+		<subject>
+                    <topic>
+                        <xsl:if test="marc:subfield[@code='2']">
+				<xsl:attribute name="authority">
+					<xsl:value-of select="marc:subfield[@code='2']"/>
+				</xsl:attribute>
+			</xsl:if>
+                        <xsl:if test="marc:subfield[@code='0']">
+				<xsl:attribute name="valueURI">
+					<xsl:value-of select="marc:subfield[@code='0']"/>
+				</xsl:attribute>
+			</xsl:if>
+			<xsl:attribute name="displayLabel">
+				<xsl:value-of select="'Material Type'"/>
+			</xsl:attribute>
+			<xsl:attribute name="type">
+				<xsl:value-of select="'Material Type'"/>
+			</xsl:attribute>
+			<!-- Template checks for altRepGroup - 880 $6 -->
+			<xsl:call-template name="xxx880"/>
+			<xsl:call-template name="subfieldSelectWithoutTrailingPoint">
+				<xsl:with-param name="codes">a</xsl:with-param>
+				<xsl:with-param name="delimeter">-</xsl:with-param>
+			</xsl:call-template>
+                    </topic>
+		</subject>
+	</xsl:template>
+
 	<!-- tOC 505 -->
 
 	<xsl:template name="createTOCFrom505">
@@ -5571,6 +5629,30 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 		<xsl:copy>
 			<xsl:apply-templates select="* | @* | text()" mode="global_copy"/>
 		</xsl:copy>
+	</xsl:template>
+
+	<xsl:template name="subfieldSelectWithoutTrailingPoint">
+          <xsl:param name="codes">abcdefghijklmnopqrstuvwxyz</xsl:param>
+          <xsl:param name="delimeter">
+            <xsl:text></xsl:text>
+          </xsl:param>
+          <xsl:variable name="str">
+            <xsl:for-each select="marc:subfield">
+              <xsl:if test="contains($codes, @code)">
+                <xsl:variable name="sfText" select="normalize-space(text())"/>
+                <xsl:choose>
+                  <xsl:when test="substring($sfText,string-length($sfText))='.'">
+                    <xsl:value-of select="substring($sfText,1,string-length($sfText)-1)"/>
+                  </xsl:when>
+                  <xsl:otherwise>
+                    <xsl:value-of select="$sfText"/>
+                  </xsl:otherwise>
+                </xsl:choose>
+                <xsl:value-of select="$delimeter"/>
+              </xsl:if>
+            </xsl:for-each>
+          </xsl:variable>
+          <xsl:value-of select="substring($str,1,string-length($str)-string-length($delimeter))"/>
 	</xsl:template>
 
 </xsl:stylesheet>
