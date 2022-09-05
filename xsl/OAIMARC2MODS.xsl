@@ -2941,11 +2941,23 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 		</xsl:for-each>
 	</xsl:template>
 	<xsl:template name="relatedIdentifier">
+           <xsl:choose>
+             <xsl:when test="marc:subfield[@code='o'] and marc:subfield[@code='4'] and contains(string(marc:subfield[@code='4']), 'hdl.handle.net')">
+               <identifier type="ead">
+                       <xsl:value-of select="marc:subfield[@code='o']"/>
+               </identifier>
+               <identifier type="hdl">
+                       <xsl:value-of select="marc:subfield[@code='4']"/>
+               </identifier>
+             </xsl:when>
+             <xsl:otherwise>
 		<xsl:for-each select="marc:subfield[@code='o']">
 			<identifier>
 				<xsl:value-of select="."/>
 			</identifier>
 		</xsl:for-each>
+             </xsl:otherwise>
+           </xsl:choose>
 	</xsl:template>
 
 	<!--tmee 1.40 510 isReferencedBy -->
