@@ -120,6 +120,9 @@ Revision 1.02 - Added Log Comment  2003/03/24 19:37:42  ckeith
 
 	<xsl:template match="/">
 		<xsl:choose>
+			<xsl:when test="//oai:GetRecord/oai:record/oai:header[@status='deleted']">
+				<xsl:message terminate="yes">Record was deleted!</xsl:message>
+			</xsl:when>
 			<xsl:when test="//marc:collection">
 				<modsCollection xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://www.loc.gov/mods/v3 http://www.loc.gov/standards/mods/v3/mods-3-5.xsd">
 					<xsl:for-each select="//marc:collection/marc:record">
